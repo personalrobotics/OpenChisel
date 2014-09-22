@@ -22,7 +22,9 @@
 #ifndef PINHOLECAMERA_H_
 #define PINHOLECAMERA_H_
 
+#include <memory>
 #include <open_chisel/geometry/Geometry.h>
+#include <open_chisel/geometry/Frustum.h>
 #include <open_chisel/camera/Intrinsics.h>
 
 namespace chisel
@@ -45,6 +47,8 @@ namespace chisel
             inline void SetWidth(int value) { width = value; }
             inline void SetHeight(int value) { height = value; }
 
+            void SetupFrustum(float near, float far, const Transform& view, Frustum* frustum);
+
             Vec3 ProjectPoint(const Vec3& point);
             Vec3 UnprojectPoint(const Vec3& point);
 
@@ -54,6 +58,8 @@ namespace chisel
             int height;
 
     };
+    typedef std::shared_ptr<PinholeCamera> PinholeCameraPtr;
+    typedef std::shared_ptr<const PinholeCamera> PinholeCameraConstPtr;
 
 } // namespace chisel 
 

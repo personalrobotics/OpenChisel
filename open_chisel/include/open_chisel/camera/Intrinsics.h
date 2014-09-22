@@ -22,6 +22,7 @@
 #ifndef INTRINSICS_H_
 #define INTRINSICS_H_
 
+#include <memory>
 #include <open_chisel/geometry/Geometry.h>
 
 namespace chisel
@@ -50,6 +51,8 @@ namespace chisel
         protected:
             Mat3x3 matrix;
     };
+    typedef std::shared_ptr<Intrinsics> IntrinsicsPtr;
+    typedef std::shared_ptr<const Intrinsics> IntrinsicsConstPtr;
 
 } // namespace chisel 
 
