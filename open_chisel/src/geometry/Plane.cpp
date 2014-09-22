@@ -19,34 +19,52 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <open_chisel/Chunk.h>
+#include <open_chisel/geometry/Plane.h>
 
 namespace chisel
 {
 
-    Chunk::Chunk()
-    {
-        // TODO Auto-generated constructor stub
-
-    }
-
-    Chunk::~Chunk()
+    Plane::Plane()
     {
 
     }
 
-    void Chunk::AllocateDistVoxels()
+    Plane::Plane(const Vec4& params) :
+        normal(Vec3(params(0), params(1), params(2))), distance(params(3))
     {
-        int totalNum = GetTotalNumVoxels();
-        voxels.clear();
-        voxels.resize(totalNum, DistVoxel());
+
     }
 
-    AABB Chunk::ComputeBoundingBox()
+    Plane::Plane(const Vec3& _normal, float _distance) :
+            normal(_normal), distance()
     {
-        Vec3 pos = ID.cast<float>() * voxelResolutionMeters;
-        Vec3 size = numVoxels.cast<float>() * voxelResolutionMeters;
-        return AABB(pos, pos + size);
+
+    }
+
+    Plane::Plane(const Vec3& a, const Vec3& b, const Vec3& c)
+    {
+        Vec3 ab = b - a;
+        Vec3 ac = c - a;
+
+        Vec3 cross = ab.cross(ac);
+        normal = cross.normalized();
+        distance = -(cross.dot(a));
+    }
+
+    Plane::Plane(float a, float b, float c, float d) :
+                normal(a, b, c), distance(d)
+    {
+
+    }
+
+    float Plane::GetSignedDistance(const Vec3& point) const
+    {
+        return point.dot(normal) + distance;
+    }
+
+    Plane::~Plane()
+    {
+
     }
 
 } // namespace chisel 

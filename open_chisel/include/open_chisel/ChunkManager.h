@@ -89,6 +89,7 @@ namespace chisel
             inline bool HasChunk(int x, int y, int z) const { return HasChunk(ChunkID(x, y, z)); }
             inline ChunkPtr GetChunk(int x, int y, int z) const { return GetChunk(ChunkID(x, y, z)); }
 
+            EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         protected:
             ChunkMap chunks;
     };

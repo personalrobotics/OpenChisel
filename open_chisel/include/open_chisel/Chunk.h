@@ -26,6 +26,7 @@
 #include <vector>
 #include <Eigen/Core>
 
+#include <open_chisel/geometry/AABB.h>
 #include "DistVoxel.h"
 
 namespace chisel
@@ -80,11 +81,15 @@ namespace chisel
                 return numVoxels(0) * numVoxels(1) * numVoxels(2);
             }
 
+            AABB ComputeBoundingBox();
+            EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
         protected:
             ChunkID ID;
             Eigen::Vector3i numVoxels;
             float voxelResolutionMeters;
             std::vector<DistVoxel> voxels;
+
     };
 
     typedef std::shared_ptr<Chunk> ChunkPtr;

@@ -19,34 +19,62 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <open_chisel/Chunk.h>
+#include <open_chisel/geometry/AABB.h>
 
 namespace chisel
 {
 
-    Chunk::Chunk()
-    {
-        // TODO Auto-generated constructor stub
-
-    }
-
-    Chunk::~Chunk()
+    AABB::AABB()
     {
 
     }
 
-    void Chunk::AllocateDistVoxels()
+    AABB::AABB(const Vec3& _min, const Vec3& _max) :
+            min(_min), max(_max)
     {
-        int totalNum = GetTotalNumVoxels();
-        voxels.clear();
-        voxels.resize(totalNum, DistVoxel());
+
     }
 
-    AABB Chunk::ComputeBoundingBox()
+    Plane::IntersectionType AABB::Intersects(const Plane& plane) const
     {
-        Vec3 pos = ID.cast<float>() * voxelResolutionMeters;
-        Vec3 size = numVoxels.cast<float>() * voxelResolutionMeters;
-        return AABB(pos, pos + size);
+        //check all corner side of plane
+        Vec3 ext = GetExtents();
+
+        Vec3List corners
+        {
+            max,
+            min,
+            min + Vec3(ext(0), 0, 0),
+            min + Vec3(0, ext(1), 0),
+            min + Vec3(0, 0, ext(2)),
+            min + Vec3(ext(0), 0, ext(2)),
+            min + Vec3(ext(0), ext(1), 0),
+            min + Vec3(0, ext(1), ext(2))
+        };
+
+
+        float lastdistance = plane.normal.dot(corners[0]) + plane.distance;
+
+        for (int i = 1; i < 8; i++)
+        {
+            float distance = plane.normal.dot(corners[i]) + plane.distance;
+
+            if ((distance <= 0.0f && lastdistance > 0.0f) || (distance >= 0.0f && lastdistance < 0.0f))
+                return Plane::IntersectionType::Intersects;
+
+            lastdistance = distance;
+        }
+
+        if (lastdistance > 0.0f)
+            return Plane::IntersectionType::Outside;
+
+        return Plane::IntersectionType::Inside;
+
+    }
+
+    AABB::~AABB()
+    {
+
     }
 
 } // namespace chisel 

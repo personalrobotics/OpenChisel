@@ -19,34 +19,54 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <open_chisel/Chunk.h>
+#ifndef PLANE_H_
+#define PLANE_H_
+
+#include "Geometry.h"
 
 namespace chisel
 {
 
-    Chunk::Chunk()
+    class Plane
     {
-        // TODO Auto-generated constructor stub
+        public:
 
-    }
+            enum class IntersectionType
+            {
+                Inside,
+                Outside,
+                Intersects
+            };
 
-    Chunk::~Chunk()
-    {
+            Plane();
+            Plane(const Vec4& params);
+            Plane(const Vec3& normal, float distance);
+            Plane(const Vec3& p1, const Vec3& p2, const Vec3& p3);
+            Plane(float a, float b, float c, float d);
+            virtual ~Plane();
 
-    }
+            float GetSignedDistance(const Vec3& point) const;
+            inline IntersectionType ClassifyPoint(const Vec3& point) const
+            {
+                float d = GetSignedDistance(point);
 
-    void Chunk::AllocateDistVoxels()
-    {
-        int totalNum = GetTotalNumVoxels();
-        voxels.clear();
-        voxels.resize(totalNum, DistVoxel());
-    }
+                if(d < 0)
+                {
+                    return IntersectionType::Inside;
+                }
+                else if(d > 0)
+                {
+                    return IntersectionType::Outside;
+                }
+                return IntersectionType::Intersects;
+            }
 
-    AABB Chunk::ComputeBoundingBox()
-    {
-        Vec3 pos = ID.cast<float>() * voxelResolutionMeters;
-        Vec3 size = numVoxels.cast<float>() * voxelResolutionMeters;
-        return AABB(pos, pos + size);
-    }
+            Vec3 normal;
+            float distance;
+
+            EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    };
 
 } // namespace chisel 
+
+#endif // PLANE_H_ 
