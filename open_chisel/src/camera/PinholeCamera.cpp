@@ -52,4 +52,10 @@ namespace chisel
         return Vec3(z * ((u - intrinsics.GetCx()) / intrinsics.GetFx()), z * ((v - intrinsics.GetCy()) / intrinsics.GetFy()), z);
     }
 
+    void PinholeCamera::SetupFrustum(float near, float far, const Transform& view, Frustum* frustum)
+    {
+        assert(frustum != nullptr);
+        frustum->SetFromParams(view, near, far, intrinsics.GetFy(), intrinsics.GetFy(), intrinsics.GetCx(), intrinsics.GetCy(), width, height);
+    }
+
 } // namespace chisel 

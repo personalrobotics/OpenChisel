@@ -22,6 +22,7 @@
 #ifndef AABB_H_
 #define AABB_H_
 
+#include <memory>
 #include <Eigen/Core>
 
 #include "Geometry.h"
@@ -33,6 +34,7 @@ namespace chisel
     class AABB
     {
         public:
+            EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             AABB();
             AABB(const Vec3& min, const Vec3& max);
             virtual ~AABB();
@@ -68,9 +70,9 @@ namespace chisel
 
             Vec3 min;
             Vec3 max;
-
-            EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     };
+    typedef std::shared_ptr<AABB> AABBPtr;
+    typedef std::shared_ptr<const AABB> AABBConstPtr;
 
 } // namespace chisel 
 

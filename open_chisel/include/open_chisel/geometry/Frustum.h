@@ -22,6 +22,7 @@
 #ifndef FRUSTUM_H_
 #define FRUSTUM_H_
 
+#include <memory>
 #include "Geometry.h"
 #include "AABB.h"
 
@@ -39,7 +40,7 @@ namespace chisel
             bool Intersects(const AABB& box) const;
             bool Contains(const Vec3& point) const;
             void ComputeBoundingBox(AABB* box) const;
-            void SetFromParams(Transform& view, float near, float far, float fx, float fy, float cx, float cy, float imgWidth, float imgHeight);
+            void SetFromParams(const Transform& view, float near, float far, float fx, float fy, float cx, float cy, float imgWidth, float imgHeight);
             void SetFromVectors(const Vec3& forward, const Vec3& pos, const Vec3& right, const Vec3& up, float near, float far, float fov, float aspect);
             void SetFromOpenGLViewProjection(const Mat4x4& view, const Mat4x4& proj);
 
@@ -60,6 +61,8 @@ namespace chisel
             Plane near;
             Plane far;
     };
+    typedef std::shared_ptr<Frustum> FrustumPtr;
+    typedef std::shared_ptr<const Frustum> FrustumConstPtr;
 
 } // namespace chisel 
 

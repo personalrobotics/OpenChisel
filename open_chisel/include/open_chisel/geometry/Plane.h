@@ -22,6 +22,7 @@
 #ifndef PLANE_H_
 #define PLANE_H_
 
+#include <memory>
 #include "Geometry.h"
 
 namespace chisel
@@ -46,6 +47,7 @@ namespace chisel
             virtual ~Plane();
 
             float GetSignedDistance(const Vec3& point) const;
+
             inline IntersectionType ClassifyPoint(const Vec3& point) const
             {
                 float d = GetSignedDistance(point);
@@ -66,6 +68,8 @@ namespace chisel
 
             EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     };
+    typedef std::shared_ptr<Plane> PlanePtr;
+    typedef std::shared_ptr<const Plane> PlaneConstPtr;
 
 } // namespace chisel 
 

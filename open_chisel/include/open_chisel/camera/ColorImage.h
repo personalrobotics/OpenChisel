@@ -27,7 +27,7 @@
 namespace chisel
 {
 
-    template <class DataType, size_t numChannels = 3> class ColorImage
+    template <class DataType = uint8_t, size_t numChannels = 3> class ColorImage
     {
         public:
             ColorImage() :
@@ -83,8 +83,8 @@ namespace chisel
             int width;
             int height;
     };
-    template <class DataType, size_t numChannels = 3> using ColorImagePtr = std::shared_ptr<ColorImage<DataType, numChannels> >;
-    template <class DataType, size_t numChannels = 3> using ColorImageConstPtr = std::shared_ptr<const ColorImage<DataType, numChannels> >;
+    template <class DataType = uint8_t, size_t numChannels = 3> using ColorImagePtr = std::shared_ptr<ColorImage<DataType, numChannels> >;
+    template <class DataType = uint8_t, size_t numChannels = 3> using ColorImageConstPtr = std::shared_ptr<const ColorImage<DataType, numChannels> >;
 
 } // namespace chisel
 

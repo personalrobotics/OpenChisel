@@ -28,7 +28,7 @@
 namespace chisel
 {
 
-    template <class DataType> class DepthImage
+    template <class DataType = uint16_t> class DepthImage
     {
         public:
             DepthImage() :
@@ -88,8 +88,9 @@ namespace chisel
             int width;
             int height;
     };
-    template <class DataType> using DepthImagePtr = std::shared_ptr<DepthImage<DataType> >;
-    template <class DataType> using DepthImageConstPtr = std::shared_ptr<const DepthImage<DataType> >;
+    template <class DataType = uint16_t> using DepthImagePtr = std::shared_ptr<DepthImage<DataType> >;
+    template <class DataType = uint16_t> using DepthImageConstPtr = std::shared_ptr<const DepthImage<DataType> >;
+
 
 } // namespace chisel 
 

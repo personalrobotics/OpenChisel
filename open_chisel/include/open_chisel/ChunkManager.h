@@ -45,11 +45,13 @@ namespace chisel
     };
 
     typedef std::unordered_map<ChunkID, ChunkPtr, ChunkHasher> ChunkMap;
-
+    class Frustum;
+    class AABB;
     class ChunkManager
     {
         public:
             ChunkManager();
+            ChunkManager(const Eigen::Vector3i& chunkSize, float voxelResolution);
             virtual ~ChunkManager();
 
             inline const ChunkMap& GetChunks() const { return chunks; }
@@ -89,13 +91,27 @@ namespace chisel
             inline bool HasChunk(int x, int y, int z) const { return HasChunk(ChunkID(x, y, z)); }
             inline ChunkPtr GetChunk(int x, int y, int z) const { return GetChunk(ChunkID(x, y, z)); }
 
+            inline ChunkID GetIDAt(const Vec3& pos)
+            {
+                return ChunkID(static_cast<int>(std::floor(pos(0) / chunkSize(0))),
+                               static_cast<int>(std::floor(pos(1) / chunkSize(1))),
+                               static_cast<int>(std::floor(pos(2) / chunkSize(2))));
+            }
+
+            void GetChunkIDsIntersecting(const AABB& box, ChunkIDList* chunkList);
+            void GetChunkIDsIntersecting(const Frustum& frustum, ChunkIDList* chunkList);
+
+
             EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         protected:
             ChunkMap chunks;
+            Eigen::Vector3i chunkSize;
+            float voxelResolutionMeters;
     };
 
     typedef std::shared_ptr<ChunkManager> ChunkManagerPtr;
     typedef std::shared_ptr<const ChunkManager> ChunkManagerConstPtr;
+
 
 } // namespace chisel 
 

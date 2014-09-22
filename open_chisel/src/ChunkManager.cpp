@@ -20,11 +20,14 @@
 // SOFTWARE.
 
 #include <open_chisel/ChunkManager.h>
+#include <open_chisel/geometry/Frustum.h>
+#include <open_chisel/geometry/AABB.h>
 
 namespace chisel
 {
 
-    ChunkManager::ChunkManager()
+    ChunkManager::ChunkManager() :
+            chunkSize(16, 16, 16), voxelResolutionMeters(0.03)
     {
 
     }
@@ -32,6 +35,57 @@ namespace chisel
     ChunkManager::~ChunkManager()
     {
 
+    }
+
+    ChunkManager::ChunkManager(const Eigen::Vector3i& size, float res) :
+            chunkSize(size), voxelResolutionMeters(res)
+    {
+
+    }
+
+    void ChunkManager::GetChunkIDsIntersecting(const AABB& box, ChunkIDList* chunkList)
+    {
+        assert(chunkList != nullptr);
+
+        ChunkID minID = GetIDAt(box.min);
+        ChunkID maxID = GetIDAt(box.max) + Eigen::Vector3i(1, 1, 1);
+
+        for (int x = minID(0); x < maxID(0); x++)
+        {
+            for (int y = minID(1); y < maxID(1); y++)
+            {
+                for (int z = minID(2); z < maxID(2); z++)
+                {
+                    chunkList->push_back(ChunkID(x, y, z));
+                }
+            }
+        }
+    }
+
+    void ChunkManager::GetChunkIDsIntersecting(const Frustum& frustum, ChunkIDList* chunkList)
+    {
+        assert(chunkList != nullptr);
+
+        AABB frustumAABB;
+        frustum.ComputeBoundingBox(&frustumAABB);
+
+        ChunkID minID = GetIDAt(frustumAABB.min);
+        ChunkID maxID = GetIDAt(frustumAABB.max) + Eigen::Vector3i(1, 1, 1);
+
+        for (int x = minID(0); x < maxID(0); x++)
+        {
+            for (int y = minID(1); y < maxID(1); y++)
+            {
+                for (int z = minID(2); z < maxID(2); z++)
+                {
+                    AABB chunkBox(Vec3(x * chunkSize(0), y * chunkSize(1), z * chunkSize(2)), chunkSize.cast<float>());
+                    if(frustum.Intersects(chunkBox))
+                    {
+                        chunkList->push_back(ChunkID(x, y, z));
+                    }
+                }
+            }
+        }
     }
 
 } // namespace chisel 

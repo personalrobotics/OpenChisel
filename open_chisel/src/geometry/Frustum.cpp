@@ -140,7 +140,7 @@ namespace chisel
         SetFromVectors(d, p, right, up, n, f, fov, aspect);
     }
 
-    void Frustum::SetFromParams(Transform& view, float nearDist, float farDist, float fx, float fy, float /*cx*/, float cy, float imgWidth, float imgHeight)
+    void Frustum::SetFromParams(const Transform& view, float nearDist, float farDist, float fx, float fy, float /*cx*/, float cy, float imgWidth, float imgHeight)
     {
         Mat3x3 r = view.linear();
         Vec3 right = r.col(0);
