@@ -26,13 +26,12 @@ namespace chisel
 
     Mesh::Mesh()
     {
-        // TODO Auto-generated constructor stub
 
     }
 
     Mesh::~Mesh()
     {
-        // TODO Auto-generated destructor stub
+
     }
 
 } // namespace chisel 

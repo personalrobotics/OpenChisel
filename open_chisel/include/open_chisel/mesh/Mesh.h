@@ -22,15 +22,18 @@
 #ifndef MESH_H_
 #define MESH_H_
 
+#include <memory>
 #include <vector>
 #include <open_chisel/geometry/Geometry.h>
 
 namespace chisel
 {
     typedef uint16_t VertIndex;
+    typedef std::vector<VertIndex> VertIndexList;
     class Mesh
     {
         public:
+            EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
             Mesh();
             virtual ~Mesh();
 
@@ -47,12 +50,14 @@ namespace chisel
                 indices.clear();
             }
 
-            std::vector<Vec3> vertices;
-            std::vector<VertIndex> indices;
-            std::vector<Vec3> normals;
-            std::vector<Vec3> colors;
+            Vec3List vertices;
+            VertIndexList indices;
+            Vec3List normals;
+            Vec3List colors;
 
     };
+    typedef std::shared_ptr<Mesh> MeshPtr;
+    typedef std::shared_ptr<const Mesh> MeshConstPtr;
 
 } // namespace chisel 
 

@@ -34,7 +34,8 @@ rosbuild_add_library(${PROJECT_NAME}
 	src/geometry/Frustum.cpp
 	src/camera/Intrinsics.cpp
 	src/camera/PinholeCamera.cpp
-	src/pointcloud/PointCloud.cpp)
+	src/pointcloud/PointCloud.cpp
+	src/ProjectionIntegrator.cpp)
 
 #target_link_libraries(${PROJECT_NAME} another_library)
 #rosbuild_add_boost_directories()

@@ -38,6 +38,7 @@ namespace chisel
     class Chunk
     {
         public:
+            EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             Chunk();
             Chunk(const ChunkID id, const Eigen::Vector3i& numVoxels, float resolution);
             virtual ~Chunk();
@@ -84,7 +85,8 @@ namespace chisel
             }
 
             AABB ComputeBoundingBox();
-            EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+            inline const Vec3& GetOrigin() { return origin; }
 
         protected:
             ChunkID ID;

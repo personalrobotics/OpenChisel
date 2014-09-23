@@ -25,6 +25,7 @@
 #include <memory>
 #include <unordered_map>
 
+#include <open_chisel/mesh/Mesh.h>
 #include "Chunk.h"
 
 namespace chisel
@@ -45,6 +46,7 @@ namespace chisel
     };
 
     typedef std::unordered_map<ChunkID, ChunkPtr, ChunkHasher> ChunkMap;
+    typedef std::unordered_map<ChunkID, MeshPtr, ChunkHasher> MeshMap;
     class Frustum;
     class AABB;
     class ChunkManager
@@ -102,11 +104,18 @@ namespace chisel
             void GetChunkIDsIntersecting(const Frustum& frustum, ChunkIDList* chunkList);
             void CreateChunk(const ChunkID& id);
 
+            void GenerateMesh(const ChunkPtr& chunk, Mesh* mesh);
+            void CacheCentroids();
+            void ExtractBorderVoxelMesh(const ChunkPtr& chunk, const Eigen::Vector3i& index, const Eigen::Vector3f& coordinates, VertIndex* nextMeshIndex, Mesh* mesh);
+            void ExtractInsideVoxelMesh(const ChunkPtr& chunk, const Eigen::Vector3i& index, const Vec3& coords, VertIndex* nextMeshIndex, Mesh* mesh);
+
             EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         protected:
             ChunkMap chunks;
             Eigen::Vector3i chunkSize;
             float voxelResolutionMeters;
+            Vec3List centroids;
+            Eigen::Matrix<int, 3, 8> cubeIndexOffsets;
     };
 
     typedef std::shared_ptr<ChunkManager> ChunkManagerPtr;
