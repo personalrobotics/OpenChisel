@@ -88,8 +88,7 @@ namespace chisel
             int width;
             int height;
     };
-    template <class DataType = uint16_t> using DepthImagePtr = std::shared_ptr<DepthImage<DataType> >;
-    template <class DataType = uint16_t> using DepthImageConstPtr = std::shared_ptr<const DepthImage<DataType> >;
+
 
 
 } // namespace chisel 

@@ -38,19 +38,21 @@ namespace chisel
             PinholeCamera();
             virtual ~PinholeCamera();
 
-            inline const Intrinsics& GetIntrinsics() { return intrinsics; }
+            inline const Intrinsics& GetIntrinsics() const { return intrinsics; }
             inline Intrinsics& GetMutableIntrinsics() { return intrinsics; }
             inline void SetIntrinsics(const Intrinsics& value) { intrinsics = value; }
 
-            inline int GetWidth() { return width; }
-            inline int GetHeight() { return height; }
+            inline int GetWidth() const { return width; }
+            inline int GetHeight() const { return height; }
             inline void SetWidth(int value) { width = value; }
             inline void SetHeight(int value) { height = value; }
 
-            void SetupFrustum(float near, float far, const Transform& view, Frustum* frustum);
+            void SetupFrustum(float near, float far, const Transform& view, Frustum* frustum) const;
 
-            Vec3 ProjectPoint(const Vec3& point);
-            Vec3 UnprojectPoint(const Vec3& point);
+            Vec3 ProjectPoint(const Vec3& point) const;
+            Vec3 UnprojectPoint(const Vec3& point) const;
+
+            bool IsPointOnImage(const Vec3& point) const;
 
         protected:
             Intrinsics intrinsics;

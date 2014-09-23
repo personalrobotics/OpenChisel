@@ -100,7 +100,7 @@ namespace chisel
 
             void GetChunkIDsIntersecting(const AABB& box, ChunkIDList* chunkList);
             void GetChunkIDsIntersecting(const Frustum& frustum, ChunkIDList* chunkList);
-
+            void CreateChunk(const ChunkID& id);
 
             EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         protected:

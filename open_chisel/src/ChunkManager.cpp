@@ -62,6 +62,11 @@ namespace chisel
         }
     }
 
+    void ChunkManager::CreateChunk(const ChunkID& id)
+    {
+        AddChunk(std::allocate_shared<Chunk>(Eigen::aligned_allocator<Chunk>(), id, chunkSize, voxelResolutionMeters));
+    }
+
     void ChunkManager::GetChunkIDsIntersecting(const Frustum& frustum, ChunkIDList* chunkList)
     {
         assert(chunkList != nullptr);

@@ -19,42 +19,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <open_chisel/Chunk.h>
+#include "Mesh.h"
 
 namespace chisel
 {
 
-    Chunk::Chunk()
+    Mesh::Mesh()
     {
         // TODO Auto-generated constructor stub
 
     }
 
-    Chunk::Chunk(const ChunkID id, const Eigen::Vector3i& nv, float r) :
-            ID(id), numVoxels(nv), voxelResolutionMeters(r)
+    Mesh::~Mesh()
     {
-        AllocateDistVoxels();
+        // TODO Auto-generated destructor stub
     }
-
-    Chunk::~Chunk()
-    {
-
-    }
-
-    void Chunk::AllocateDistVoxels()
-    {
-        int totalNum = GetTotalNumVoxels();
-        voxels.clear();
-        voxels.resize(totalNum, DistVoxel());
-    }
-
-    AABB Chunk::ComputeBoundingBox()
-    {
-        Vec3 pos = ID.cast<float>() * voxelResolutionMeters;
-        Vec3 size = numVoxels.cast<float>() * voxelResolutionMeters;
-        return AABB(pos, pos + size);
-    }
-
-
 
 } // namespace chisel 

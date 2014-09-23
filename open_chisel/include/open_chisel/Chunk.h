@@ -39,6 +39,7 @@ namespace chisel
     {
         public:
             Chunk();
+            Chunk(const ChunkID id, const Eigen::Vector3i& numVoxels, float resolution);
             virtual ~Chunk();
 
             void AllocateDistVoxels();
@@ -76,6 +77,7 @@ namespace chisel
                 return (x >= 0 && x < numVoxels(0) && y >= 0 && y < numVoxels(1) && z >= 0 && z < numVoxels(2));
             }
 
+
             inline size_t GetTotalNumVoxels()
             {
                 return numVoxels(0) * numVoxels(1) * numVoxels(2);
@@ -89,6 +91,7 @@ namespace chisel
             Eigen::Vector3i numVoxels;
             float voxelResolutionMeters;
             std::vector<DistVoxel> voxels;
+            Vec3 origin;
 
     };
 

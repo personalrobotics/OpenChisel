@@ -19,42 +19,27 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <open_chisel/Chunk.h>
+#ifndef TRUNCATOR_H_
+#define TRUNCATOR_H_
 
 namespace chisel
 {
 
-    Chunk::Chunk()
+    class Truncator
     {
-        // TODO Auto-generated constructor stub
+        public:
+            Truncator() = default;
+            virtual ~Truncator()
+            {
 
-    }
+            }
 
-    Chunk::Chunk(const ChunkID id, const Eigen::Vector3i& nv, float r) :
-            ID(id), numVoxels(nv), voxelResolutionMeters(r)
-    {
-        AllocateDistVoxels();
-    }
-
-    Chunk::~Chunk()
-    {
-
-    }
-
-    void Chunk::AllocateDistVoxels()
-    {
-        int totalNum = GetTotalNumVoxels();
-        voxels.clear();
-        voxels.resize(totalNum, DistVoxel());
-    }
-
-    AABB Chunk::ComputeBoundingBox()
-    {
-        Vec3 pos = ID.cast<float>() * voxelResolutionMeters;
-        Vec3 size = numVoxels.cast<float>() * voxelResolutionMeters;
-        return AABB(pos, pos + size);
-    }
-
-
+            virtual float GetTruncationDistance(float depthReading)
+            {
+                return 0.0f;
+            }
+    };
 
 } // namespace chisel 
+
+#endif // TRUNCATOR_H_ 

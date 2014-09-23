@@ -19,42 +19,19 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <open_chisel/Chunk.h>
+#include <open_chisel/pointcloud/PointCloud.h>
 
 namespace chisel
 {
 
-    Chunk::Chunk()
-    {
-        // TODO Auto-generated constructor stub
-
-    }
-
-    Chunk::Chunk(const ChunkID id, const Eigen::Vector3i& nv, float r) :
-            ID(id), numVoxels(nv), voxelResolutionMeters(r)
-    {
-        AllocateDistVoxels();
-    }
-
-    Chunk::~Chunk()
+    PointCloud::PointCloud()
     {
 
     }
 
-    void Chunk::AllocateDistVoxels()
+    PointCloud::~PointCloud()
     {
-        int totalNum = GetTotalNumVoxels();
-        voxels.clear();
-        voxels.resize(totalNum, DistVoxel());
+
     }
-
-    AABB Chunk::ComputeBoundingBox()
-    {
-        Vec3 pos = ID.cast<float>() * voxelResolutionMeters;
-        Vec3 size = numVoxels.cast<float>() * voxelResolutionMeters;
-        return AABB(pos, pos + size);
-    }
-
-
 
 } // namespace chisel 

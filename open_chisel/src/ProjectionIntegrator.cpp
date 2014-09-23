@@ -19,42 +19,26 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <open_chisel/Chunk.h>
+#include <open_chisel/ProjectionIntegrator.h>
 
 namespace chisel
 {
 
-    Chunk::Chunk()
+    ProjectionIntegrator::ProjectionIntegrator()
     {
         // TODO Auto-generated constructor stub
 
     }
 
-    Chunk::Chunk(const ChunkID id, const Eigen::Vector3i& nv, float r) :
-            ID(id), numVoxels(nv), voxelResolutionMeters(r)
-    {
-        AllocateDistVoxels();
-    }
-
-    Chunk::~Chunk()
+    ProjectionIntegrator::ProjectionIntegrator(const Truncator& t, const Weighter& w, float crvDist, bool enableCrv) :
+            truncator(t), weighter(w), carvingDist(crvDist), enableVoxelCarving(enableCrv)
     {
 
     }
 
-    void Chunk::AllocateDistVoxels()
+    ProjectionIntegrator::~ProjectionIntegrator()
     {
-        int totalNum = GetTotalNumVoxels();
-        voxels.clear();
-        voxels.resize(totalNum, DistVoxel());
+        // TODO Auto-generated destructor stub
     }
-
-    AABB Chunk::ComputeBoundingBox()
-    {
-        Vec3 pos = ID.cast<float>() * voxelResolutionMeters;
-        Vec3 size = numVoxels.cast<float>() * voxelResolutionMeters;
-        return AABB(pos, pos + size);
-    }
-
-
 
 } // namespace chisel 

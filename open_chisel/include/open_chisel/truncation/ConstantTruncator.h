@@ -19,42 +19,39 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <open_chisel/Chunk.h>
+#ifndef CONSTANTTRUNCATOR_H_
+#define CONSTANTTRUNCATOR_H_
+
+#include "Truncator.h"
 
 namespace chisel
 {
 
-    Chunk::Chunk()
+    class ConstantTruncator : Truncator
     {
-        // TODO Auto-generated constructor stub
+        public:
+            ConstantTruncator() = default;
 
-    }
+            ConstantTruncator(float value) :
+                truncationDistance(value)
+            {
 
-    Chunk::Chunk(const ChunkID id, const Eigen::Vector3i& nv, float r) :
-            ID(id), numVoxels(nv), voxelResolutionMeters(r)
-    {
-        AllocateDistVoxels();
-    }
+            }
 
-    Chunk::~Chunk()
-    {
+            virtual ~ConstantTruncator() = default;
 
-    }
+            inline void SetTruncationDistance(float value) { truncationDistance = value; }
 
-    void Chunk::AllocateDistVoxels()
-    {
-        int totalNum = GetTotalNumVoxels();
-        voxels.clear();
-        voxels.resize(totalNum, DistVoxel());
-    }
+            float GetTruncationDistance(float reading)
+            {
+                return truncationDistance;
+            }
 
-    AABB Chunk::ComputeBoundingBox()
-    {
-        Vec3 pos = ID.cast<float>() * voxelResolutionMeters;
-        Vec3 size = numVoxels.cast<float>() * voxelResolutionMeters;
-        return AABB(pos, pos + size);
-    }
+        protected:
+            float truncationDistance;
 
-
+    };
 
 } // namespace chisel 
+
+#endif // CONSTANTTRUNCATOR_H_ 

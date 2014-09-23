@@ -19,42 +19,41 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <open_chisel/Chunk.h>
+#ifndef MESH_H_
+#define MESH_H_
+
+#include <vector>
+#include <open_chisel/geometry/Geometry.h>
 
 namespace chisel
 {
-
-    Chunk::Chunk()
+    typedef uint16_t VertIndex;
+    class Mesh
     {
-        // TODO Auto-generated constructor stub
+        public:
+            Mesh();
+            virtual ~Mesh();
 
-    }
+            inline bool HasVertices() { return !vertices.empty(); }
+            inline bool HasNormals() { return !normals.empty(); }
+            inline bool HasColors() { return !colors.empty(); }
+            inline bool HasIndices() { return !indices.empty(); }
 
-    Chunk::Chunk(const ChunkID id, const Eigen::Vector3i& nv, float r) :
-            ID(id), numVoxels(nv), voxelResolutionMeters(r)
-    {
-        AllocateDistVoxels();
-    }
+            inline void Clear()
+            {
+                vertices.clear();
+                normals.clear();
+                colors.clear();
+                indices.clear();
+            }
 
-    Chunk::~Chunk()
-    {
+            std::vector<Vec3> vertices;
+            std::vector<VertIndex> indices;
+            std::vector<Vec3> normals;
+            std::vector<Vec3> colors;
 
-    }
-
-    void Chunk::AllocateDistVoxels()
-    {
-        int totalNum = GetTotalNumVoxels();
-        voxels.clear();
-        voxels.resize(totalNum, DistVoxel());
-    }
-
-    AABB Chunk::ComputeBoundingBox()
-    {
-        Vec3 pos = ID.cast<float>() * voxelResolutionMeters;
-        Vec3 size = numVoxels.cast<float>() * voxelResolutionMeters;
-        return AABB(pos, pos + size);
-    }
-
-
+    };
 
 } // namespace chisel 
+
+#endif // MESH_H_ 

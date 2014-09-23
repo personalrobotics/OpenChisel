@@ -19,42 +19,34 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <open_chisel/Chunk.h>
+#ifndef CONSTANTWEIGHTER_H_
+#define CONSTANTWEIGHTER_H_
+
+#include "Weighter.h"
 
 namespace chisel
 {
 
-    Chunk::Chunk()
+    class ConstantWeighter : Weighter
     {
-        // TODO Auto-generated constructor stub
+        public:
+            ConstantWeighter() = default;
+            ConstantWeighter(uint16_t w)
+            {
+                weight = w;
+            }
+            virtual ~ConstantWeighter() = default;
 
-    }
+            virtual uint16_t GetWeight(float surfaceDist)
+            {
+                return weight;
+            }
 
-    Chunk::Chunk(const ChunkID id, const Eigen::Vector3i& nv, float r) :
-            ID(id), numVoxels(nv), voxelResolutionMeters(r)
-    {
-        AllocateDistVoxels();
-    }
+        protected:
+            uint16_t weight;
 
-    Chunk::~Chunk()
-    {
-
-    }
-
-    void Chunk::AllocateDistVoxels()
-    {
-        int totalNum = GetTotalNumVoxels();
-        voxels.clear();
-        voxels.resize(totalNum, DistVoxel());
-    }
-
-    AABB Chunk::ComputeBoundingBox()
-    {
-        Vec3 pos = ID.cast<float>() * voxelResolutionMeters;
-        Vec3 size = numVoxels.cast<float>() * voxelResolutionMeters;
-        return AABB(pos, pos + size);
-    }
-
-
+    };
 
 } // namespace chisel 
+
+#endif // CONSTANTWEIGHTER_H_ 

@@ -57,6 +57,12 @@ namespace chisel
                 SetWeight(weight + weightUpdate);
             }
 
+            inline void Reset()
+            {
+                sdf = 0;
+                weight = 0;
+            }
+
         protected:
            int16_t sdf;
            uint16_t weight;
