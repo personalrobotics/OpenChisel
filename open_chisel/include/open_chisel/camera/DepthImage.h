@@ -54,7 +54,7 @@ namespace chisel
                 return col + row * width;
             }
 
-            inline const float DepthAt(int row, int col) const
+            inline float DepthAt(int row, int col) const
             {
                 const DataType& d = At(row, col);
                 return static_cast<float>(d) / static_cast<float>(std::numeric_limits<DataType>::max());

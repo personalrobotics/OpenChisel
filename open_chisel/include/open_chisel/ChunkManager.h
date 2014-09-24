@@ -109,6 +109,15 @@ namespace chisel
             void ExtractBorderVoxelMesh(const ChunkPtr& chunk, const Eigen::Vector3i& index, const Eigen::Vector3f& coordinates, VertIndex* nextMeshIndex, Mesh* mesh);
             void ExtractInsideVoxelMesh(const ChunkPtr& chunk, const Eigen::Vector3i& index, const Vec3& coords, VertIndex* nextMeshIndex, Mesh* mesh);
 
+            inline const MeshMap& GetAllMeshes() const { return allMeshes; }
+            inline MeshMap& GetAllMutableMeshes() { return allMeshes; }
+            inline const MeshPtr& GetMesh(const ChunkID& chunkID) const { return allMeshes.at(chunkID); }
+            inline MeshPtr& GetMutableMesh(const ChunkID& chunkID) { return allMeshes.at(chunkID); }
+            inline bool HasMesh(const ChunkID& chunkID) const { return allMeshes.find(chunkID) != allMeshes.end(); }
+
+            void RecomptueMesh(const ChunkID& chunkID);
+            void RecomputeMeshes(const ChunkIDList& chunks);
+
             EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         protected:
             ChunkMap chunks;
@@ -116,6 +125,7 @@ namespace chisel
             float voxelResolutionMeters;
             Vec3List centroids;
             Eigen::Matrix<int, 3, 8> cubeIndexOffsets;
+            MeshMap allMeshes;
     };
 
     typedef std::shared_ptr<ChunkManager> ChunkManagerPtr;

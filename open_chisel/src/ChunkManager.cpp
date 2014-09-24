@@ -87,6 +87,37 @@ namespace chisel
         }
     }
 
+
+    void ChunkManager::RecomptueMesh(const ChunkID& chunkID)
+    {
+        if (!HasChunk(chunkID))
+        {
+            return;
+        }
+
+        MeshPtr mesh;
+        if (!HasMesh(chunkID))
+        {
+            mesh = std::allocate_shared<Mesh>(Eigen::aligned_allocator<Mesh>());
+        }
+        else
+        {
+            mesh = GetMesh(chunkID);
+        }
+
+
+        ChunkPtr chunk = GetChunk(chunkID);
+        GenerateMesh(chunk, mesh.get());
+    }
+
+    void ChunkManager::RecomputeMeshes(const ChunkIDList& chunks)
+    {
+        for (const ChunkID& chunkID : chunks)
+        {
+            RecomptueMesh(chunkID);
+        }
+    }
+
     void ChunkManager::CreateChunk(const ChunkID& id)
     {
         AddChunk(std::allocate_shared<Chunk>(Eigen::aligned_allocator<Chunk>(), id, chunkSize, voxelResolutionMeters));

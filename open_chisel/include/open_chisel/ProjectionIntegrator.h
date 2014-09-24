@@ -42,7 +42,7 @@ namespace chisel
             ProjectionIntegrator(const Truncator& t, const Weighter& w, float carvingDist, bool enableCarving);
             virtual ~ProjectionIntegrator();
 
-            template <class DataType> void Integrate(std::shared_ptr<const DepthImage<DataType> > depthImage, PinholeCameraConstPtr camera, Transform cameraPose, Chunk* chunk)
+            template <class DataType> bool Integrate(const std::shared_ptr<const DepthImage<DataType> >& depthImage, const PinholeCamera& camera, const Transform& cameraPose, Chunk* chunk)
             {
                     assert(chunk != nullptr);
 
@@ -51,6 +51,7 @@ namespace chisel
                     float halfResolution = 0.5f * resolution;
                     Transform inversePose = cameraPose.inverse();
                     Vec3 voxelCenter;
+                    bool updated = false;
                     for (int x = 0; x < numVoxels(0); x++)
                     {
                         voxelCenter(0) = x * resolution + halfResolution;
@@ -61,9 +62,9 @@ namespace chisel
                             {
                                 voxelCenter(2) = z * resolution + halfResolution;
                                 Vec3 voxelCenterInCamera = inversePose * voxelCenter;
-                                Vec3 cameraPos = camera->ProjectPoint(voxelCenterInCamera);
+                                Vec3 cameraPos = camera.ProjectPoint(voxelCenterInCamera);
 
-                                if(!camera->IsPointOnImage(cameraPos)) continue;
+                                if(!camera.IsPointOnImage(cameraPos)) continue;
 
                                 float voxelDist = cameraPos.z();
                                 float depth = depthImage->DepthAt((int)cameraPos(0), (int)cameraPos(1));
@@ -75,11 +76,16 @@ namespace chisel
                                 {
                                     DistVoxel& voxel = chunk->GetDistVoxel(x, y, z);
                                     voxel.Integrate(surfaceDist, weighter.GetWeight(surfaceDist));
+                                    updated = true;
                                 }
                                 else if(enableVoxelCarving && surfaceDist > truncation + carvingDist)
                                 {
                                     DistVoxel& voxel = chunk->GetDistVoxel(x, y, z);
-                                    voxel.Reset();
+                                    if (voxel.GetWeight() > 0)
+                                    {
+                                        voxel.Reset();
+                                        updated = true;
+                                    }
                                 }
                             }
                         }

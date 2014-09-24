@@ -46,8 +46,11 @@ namespace chisel
             inline int GetHeight() const { return height; }
             inline void SetWidth(int value) { width = value; }
             inline void SetHeight(int value) { height = value; }
+            inline float GetNearPlane() const { return nearPlane; }
+            inline float GetFarPlane() const { return farPlane; }
 
-            void SetupFrustum(float near, float far, const Transform& view, Frustum* frustum) const;
+
+            void SetupFrustum(const Transform& view, Frustum* frustum) const;
 
             Vec3 ProjectPoint(const Vec3& point) const;
             Vec3 UnprojectPoint(const Vec3& point) const;
@@ -58,6 +61,8 @@ namespace chisel
             Intrinsics intrinsics;
             int width;
             int height;
+            float nearPlane;
+            float farPlane;
 
     };
     typedef std::shared_ptr<PinholeCamera> PinholeCameraPtr;

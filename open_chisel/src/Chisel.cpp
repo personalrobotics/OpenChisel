@@ -19,48 +19,40 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <open_chisel/camera/PinholeCamera.h>
+#include <open_chisel/Chisel.h>
 
 namespace chisel
 {
 
-    PinholeCamera::PinholeCamera()
+    Chisel::Chisel()
     {
-
+        // TODO Auto-generated constructor stub
 
     }
 
-    PinholeCamera::~PinholeCamera()
+    Chisel::Chisel(const Eigen::Vector3i& chunkSize, float voxelResolution) :
+            chunkManager(chunkSize, voxelResolution)
     {
 
     }
 
-    Vec3 PinholeCamera::ProjectPoint(const Vec3& point) const
+    Chisel::~Chisel()
     {
-        const float& x = point(0);
-        const float& y = point(1);
-        const float& z = point(2);
-        assert(z > 0);
-        return Vec3(intrinsics.GetFx() * (x / z) + intrinsics.GetCx(), intrinsics.GetFy() * (y / z) + intrinsics.GetCy(), z);
+        // TODO Auto-generated destructor stub
     }
 
-    Vec3 PinholeCamera::UnprojectPoint(const Vec3& point) const
+    void Chisel::UpdateMeshes()
     {
-        const float& u = point(0);
-        const float& v = point(1);
-        const float& z = point(2);
-        return Vec3(z * ((u - intrinsics.GetCx()) / intrinsics.GetFx()), z * ((v - intrinsics.GetCy()) / intrinsics.GetFy()), z);
+        chunkManager.RecomputeMeshes(meshesToUpdate);
+        meshesToUpdate.clear();
     }
 
-    void PinholeCamera::SetupFrustum(const Transform& view, Frustum* frustum) const
+    void Chisel::GarbageCollect(const ChunkIDList& chunks)
     {
-        assert(frustum != nullptr);
-        frustum->SetFromParams(view, nearPlane, farPlane, intrinsics.GetFy(), intrinsics.GetFy(), intrinsics.GetCx(), intrinsics.GetCy(), width, height);
-    }
-
-    bool PinholeCamera::IsPointOnImage(const Vec3& point) const
-    {
-        return point(2) >= 0 && point(0) >= 0 && point(1) >= 0 && point(0) < width && point(1) < height;
+       for (const ChunkID& chunkID : chunks)
+       {
+           chunkManager.RemoveChunk(chunkID);
+       }
     }
 
 } // namespace chisel 
