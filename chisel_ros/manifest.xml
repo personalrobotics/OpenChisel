@@ -1,0 +1,17 @@
+<package>
+  <description brief="chisel_ros">
+
+     chisel_ros
+
+  </description>
+  <author>Matt Klingensmith</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/chisel_ros</url>
+  <depend package="roscpp"/>
+  <depend package="pcl"/>
+  <depend package="open_chisel"/>
+
+</package>
+
+
