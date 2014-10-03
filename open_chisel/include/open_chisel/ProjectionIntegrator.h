@@ -27,6 +27,7 @@
 #include <open_chisel/geometry/AABB.h>
 #include <open_chisel/camera/PinholeCamera.h>
 #include <open_chisel/camera/DepthImage.h>
+#include <open_chisel/camera/ColorImage.h>
 #include <open_chisel/Chunk.h>
 
 #include <open_chisel/truncation/Truncator.h>
@@ -39,67 +40,161 @@ namespace chisel
     {
         public:
             ProjectionIntegrator();
-            ProjectionIntegrator(const Truncator& t, const Weighter& w, float carvingDist, bool enableCarving);
+            ProjectionIntegrator(const TruncatorPtr& t, const WeighterPtr& w, float carvingDist, bool enableCarving);
             virtual ~ProjectionIntegrator();
 
-            template <class DataType> bool Integrate(const std::shared_ptr<const DepthImage<DataType> >& depthImage, const PinholeCamera& camera, const Transform& cameraPose, Chunk* chunk)
+            template<class DataType> bool Integrate(const std::shared_ptr<const DepthImage<DataType> >& depthImage, const PinholeCamera& camera, const Transform& cameraPose, Chunk* chunk) const
             {
-                    assert(chunk != nullptr);
+                assert(chunk != nullptr);
 
-                    Eigen::Vector3i numVoxels = chunk->numVoxels;
-                    float resolution = chunk->voxelResolutionMeters;
-                    float halfResolution = 0.5f * resolution;
-                    Transform inversePose = cameraPose.inverse();
-                    Vec3 voxelCenter;
-                    bool updated = false;
-                    for (int x = 0; x < numVoxels(0); x++)
+                Eigen::Vector3i numVoxels = chunk->GetNumVoxels();
+                float resolution = chunk->GetVoxelResolutionMeters();
+                Vec3 origin = chunk->GetOrigin();
+                float halfResolution = 0.5f * resolution;
+                Vec3 voxelCenter;
+                bool updated = false;
+                for (int x = 0; x < numVoxels(0); x++)
+                {
+                    voxelCenter(0) = x * resolution + halfResolution + origin.x();
+                    for (int y = 0; y < numVoxels(1); y++)
                     {
-                        voxelCenter(0) = x * resolution + halfResolution;
-                        for (int y = 0; y < numVoxels(1); y++)
+                        voxelCenter(1) = y * resolution + halfResolution + origin.y();
+                        for (int z = 0; z < numVoxels(2); z++)
                         {
-                            voxelCenter(1) = y * resolution + halfResolution;
-                            for (int z = 0; z < numVoxels(2); z++)
+                            voxelCenter(2) = z * resolution + halfResolution + origin.z();
+                            Vec3 voxelCenterInCamera = cameraPose.linear().transpose() * (voxelCenter - cameraPose.translation());
+                            Vec3 cameraPos = camera.ProjectPoint(voxelCenterInCamera);
+
+                            if (!camera.IsPointOnImage(cameraPos) || voxelCenterInCamera.z() < 0)
+                                continue;
+
+                            float voxelDist = fabs(voxelCenterInCamera.z());
+                            float depth = depthImage->BilinearInterpolateDepth(cameraPos(0), cameraPos(1));
+
+                            if(std::isnan(depth))
                             {
-                                voxelCenter(2) = z * resolution + halfResolution;
-                                Vec3 voxelCenterInCamera = inversePose * voxelCenter;
-                                Vec3 cameraPos = camera.ProjectPoint(voxelCenterInCamera);
+                                continue;
+                            }
 
-                                if(!camera.IsPointOnImage(cameraPos)) continue;
+                            float truncation = truncator->GetTruncationDistance(depth);
+                            float surfaceDist = depth - voxelDist;
 
-                                float voxelDist = cameraPos.z();
-                                float depth = depthImage->DepthAt((int)cameraPos(0), (int)cameraPos(1));
-                                float truncation = truncator.GetTruncationDistance(depth);
-                                float surfaceDist = depth - voxelDist;
-
-
-                                if (std::abs(surfaceDist) < truncation)
+                            if (std::abs(surfaceDist) < truncation)
+                            {
+                                DistVoxel& voxel = chunk->GetDistVoxelMutable(x, y, z);
+                                voxel.Integrate(surfaceDist, weighter->GetWeight(surfaceDist));
+                                updated = true;
+                            }
+                            else if (enableVoxelCarving && surfaceDist > truncation + carvingDist)
+                            {
+                                DistVoxel& voxel = chunk->GetDistVoxelMutable(x, y, z);
+                                if (voxel.GetWeight() > 0)
                                 {
-                                    DistVoxel& voxel = chunk->GetDistVoxel(x, y, z);
-                                    voxel.Integrate(surfaceDist, weighter.GetWeight(surfaceDist));
-                                    updated = true;
-                                }
-                                else if(enableVoxelCarving && surfaceDist > truncation + carvingDist)
-                                {
-                                    DistVoxel& voxel = chunk->GetDistVoxel(x, y, z);
-                                    if (voxel.GetWeight() > 0)
+                                    float sdf = voxel.GetSDF();
+
+                                    if(sdf <= 0)
                                     {
-                                        voxel.Reset();
+                                        voxel.Integrate(0.001f, 1);
                                         updated = true;
                                     }
                                 }
                             }
                         }
                     }
+                }
+                return updated;
             }
+           template<class DataType, class ColorType> bool IntegrateColor(const std::shared_ptr<const DepthImage<DataType> >& depthImage, const PinholeCamera& depthCamera, const Transform& depthCameraPose, const std::shared_ptr<const ColorImage<ColorType, 3> >& colorImage, const PinholeCamera& colorCamera, const Transform& colorCameraPose, Chunk* chunk) const
+           {
+               assert(chunk != nullptr);
 
-            inline const Truncator& GetTruncator() { return truncator; }
-            inline void SetTruncator(const Truncator& value) { truncator = value; }
-            inline const Weighter& GetWeighter() { return weighter; }
-            inline void SetWeighter(const Weighter& value) { weighter = value; }
+               Eigen::Vector3i numVoxels = chunk->GetNumVoxels();
+               float resolution = chunk->GetVoxelResolutionMeters();
+               Vec3 origin = chunk->GetOrigin();
+               float halfResolution = 0.5f * resolution;
+               Vec3 voxelCenter;
+               bool updated = false;
+               for (int x = 0; x < numVoxels(0); x++)
+               {
+                   voxelCenter(0) = x * resolution + halfResolution + origin.x();
+                   for (int y = 0; y < numVoxels(1); y++)
+                   {
+                       voxelCenter(1) = y * resolution + halfResolution + origin.y();
+                       for (int z = 0; z < numVoxels(2); z++)
+                       {
+                           voxelCenter(2) = z * resolution + halfResolution + origin.z();
+                           Vec3 voxelCenterInCamera = depthCameraPose.linear().transpose() * (voxelCenter - depthCameraPose.translation());
+                           Vec3 cameraPos = depthCamera.ProjectPoint(voxelCenterInCamera);
+
+                           if (!depthCamera.IsPointOnImage(cameraPos) || voxelCenterInCamera.z() < 0)
+                           {
+                               //printf("%f %f is not on image...\n", cameraPos(0), cameraPos(1));
+                               continue;
+                           }
+
+                           float voxelDist = fabs(voxelCenterInCamera.z());
+                           float depth = depthImage->BilinearInterpolateDepth(cameraPos(0), cameraPos(1));
+
+                           if(std::isnan(depth))
+                           {
+                               continue;
+                           }
+
+                           float truncation = truncator->GetTruncationDistance(depth);
+                           float surfaceDist = depth - voxelDist;
+
+                           if (std::abs(surfaceDist) < truncation)
+                           {
+                               Vec3 voxelCenterInColorCamera = colorCameraPose.linear().transpose() * (voxelCenter - colorCameraPose.translation());
+                               Vec3 colorCameraPos = colorCamera.ProjectPoint(voxelCenterInColorCamera);
+                               if(colorCamera.IsPointOnImage(colorCameraPos))
+                               {
+                                   ColorVoxel& colorVoxel = chunk->GetColorVoxelMutable(x, y, z);
+                                   int r = static_cast<int>(colorCameraPos(1));
+                                   int c = static_cast<int>(colorCameraPos(0));
+                                   uint8_t red = colorImage->At(r, c, 2);
+                                   uint8_t green = colorImage->At(r, c, 1);
+                                   uint8_t blue = colorImage->At(r, c, 0);
+                                   colorVoxel.Integrate(red, green, blue, static_cast<uint8_t>(weighter->GetWeight(surfaceDist)));
+                               }
+
+                               DistVoxel& voxel = chunk->GetDistVoxelMutable(x, y, z);
+                               voxel.Integrate(surfaceDist, weighter->GetWeight(surfaceDist));
+
+                               updated = true;
+                           }
+                           else if (enableVoxelCarving && surfaceDist > truncation + carvingDist)
+                           {
+                               DistVoxel& voxel = chunk->GetDistVoxelMutable(x, y, z);
+                               if (voxel.GetWeight() > 0)
+                               {
+                                   float sdf = voxel.GetSDF();
+                                   if(sdf <= 0)
+                                   {
+                                       voxel.Integrate(0.001f, 1);
+                                       updated = true;
+                                   }
+                               }
+                           }
+                       }
+                   }
+               }
+               return updated;
+           }
+
+            inline const TruncatorPtr& GetTruncator() { return truncator; }
+            inline void SetTruncator(const TruncatorPtr& value) { truncator = value; }
+            inline const WeighterPtr& GetWeighter() { return weighter; }
+            inline void SetWeighter(const WeighterPtr& value) { weighter = value; }
+
+            inline float GetCarvingDist() { return carvingDist; }
+            inline bool IsCarvingEnabled() { return enableVoxelCarving; }
+            inline void SetCarvingDist(float dist) { carvingDist = dist; }
+            inline void SetCarvingEnabled(bool enabled) { enableVoxelCarving = enabled; }
 
         protected:
-            Truncator truncator;
-            Weighter weighter;
+            TruncatorPtr truncator;
+            WeighterPtr weighter;
             float carvingDist;
             bool enableVoxelCarving;
     };

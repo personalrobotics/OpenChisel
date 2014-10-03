@@ -27,20 +27,22 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-typedef Eigen::Vector2f Vec2;
-typedef Eigen::Vector3f Vec3;
-typedef Eigen::Vector4f Vec4;
-typedef Eigen::Matrix3f Mat3x3;
-typedef Eigen::Matrix4f Mat4x4;
-typedef Eigen::Affine3f Transform;
-typedef Eigen::Quaternionf Quaterion;
+namespace chisel
+{
+    typedef Eigen::Vector2f Vec2;
+    typedef Eigen::Vector3f Vec3;
+    typedef Eigen::Vector4f Vec4;
+    typedef Eigen::Matrix3f Mat3x3;
+    typedef Eigen::Matrix4f Mat4x4;
+    typedef Eigen::Affine3f Transform;
+    typedef Eigen::Quaternionf Quaternion;
 
-typedef std::vector<Vec2, Eigen::aligned_allocator<Vec2> > Vec2List;
-typedef std::vector<Vec3, Eigen::aligned_allocator<Vec3> > Vec3List;
-typedef std::vector<Vec4, Eigen::aligned_allocator<Vec4> > Vec4List;
-typedef std::vector<Mat3x3, Eigen::aligned_allocator<Mat3x3> > Mat3x3List;
-typedef std::vector<Mat4x4, Eigen::aligned_allocator<Mat4x4> > Mat4List;
-typedef std::vector<Transform, Eigen::aligned_allocator<Transform> > TransformList;
-typedef std::vector<Quaterion, Eigen::aligned_allocator<Quaterion> > QuaterionList;
-
+    typedef std::vector<Vec2, Eigen::aligned_allocator<Vec2> > Vec2List;
+    typedef std::vector<Vec3, Eigen::aligned_allocator<Vec3> > Vec3List;
+    typedef std::vector<Vec4, Eigen::aligned_allocator<Vec4> > Vec4List;
+    typedef std::vector<Mat3x3, Eigen::aligned_allocator<Mat3x3> > Mat3x3List;
+    typedef std::vector<Mat4x4, Eigen::aligned_allocator<Mat4x4> > Mat4List;
+    typedef std::vector<Transform, Eigen::aligned_allocator<Transform> > TransformList;
+    typedef std::vector<Quaternion, Eigen::aligned_allocator<Quaternion> > QuaternionList;
+}
 #endif // GEOMETRY_H_ 

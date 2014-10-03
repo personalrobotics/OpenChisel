@@ -25,10 +25,12 @@
 #include <memory>
 #include <Eigen/Core>
 
+#include <open_chisel/geometry/Interpolate.h>
+
 namespace chisel
 {
 
-    template <class DataType = uint16_t> class DepthImage
+    template <class DataType = float> class DepthImage
     {
         public:
             DepthImage() :
@@ -54,10 +56,21 @@ namespace chisel
                 return col + row * width;
             }
 
+            inline float BilinearInterpolateDepth(float x, float y) const
+            {
+                int gxi = static_cast<int>(x);
+                int gyi = static_cast<int>(y);
+                float c00 = DepthAt(gyi, gxi);
+                float c10 = DepthAt(gyi, gxi + 1);
+                float c01 = DepthAt(gyi + 1, gxi);
+                float c11 = DepthAt(gyi + 1, gxi + 1);
+                return BilinearInterpolate(c00, c10, c01, c11, x - gxi, y - gyi);
+            }
+
             inline float DepthAt(int row, int col) const
             {
                 const DataType& d = At(row, col);
-                return static_cast<float>(d) / static_cast<float>(std::numeric_limits<DataType>::max());
+                return static_cast<float>(d);
             }
 
             inline const DataType& At(int row, int col) const

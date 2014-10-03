@@ -57,7 +57,8 @@ namespace chisel
 
             inline const DataType& At(int row, int col, int channel) const
             {
-                return data[Index(row, col, channel)];
+                const int index = Index(row, col, channel);
+                return data[index];
             }
 
             inline DataType& AtMutable(int row, int col, int channel) const
@@ -83,8 +84,6 @@ namespace chisel
             int width;
             int height;
     };
-    template <class DataType = uint8_t, size_t numChannels = 3> using ColorImagePtr = std::shared_ptr<ColorImage<DataType, numChannels> >;
-    template <class DataType = uint8_t, size_t numChannels = 3> using ColorImageConstPtr = std::shared_ptr<const ColorImage<DataType, numChannels> >;
 
 } // namespace chisel
 

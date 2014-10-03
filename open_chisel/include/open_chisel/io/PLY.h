@@ -19,19 +19,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+
+#ifndef PLY_H_
+#define PLY_H_
+
+#include <string>
+#include <open_chisel/geometry/Geometry.h>
 #include <open_chisel/mesh/Mesh.h>
 
 namespace chisel
 {
+    bool SaveMeshPLYASCII(const std::string& fileName, const chisel::MeshConstPtr& mesh);
+}
 
-    Mesh::Mesh()
-    {
-
-    }
-
-    Mesh::~Mesh()
-    {
-
-    }
-
-} // namespace chisel 
+#endif // PLY_H_ 

@@ -51,6 +51,9 @@ namespace chisel
             const Plane& GetNearPlane() const { return near; }
             const Plane& GetFarPlane() const { return far; }
 
+            const Vec3* GetLines() const { return lines; }
+            const Vec3* GetCorners()  const { return corners; }
+
         protected:
             Vec3 corners[8];
             Vec3 lines[24];

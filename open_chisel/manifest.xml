@@ -11,6 +11,10 @@
   <depend package="std_msgs"/>
   <depend package="roscpp"/>
 
+    <export>
+        <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib"/>
+    </export>
+
 </package>
 
 

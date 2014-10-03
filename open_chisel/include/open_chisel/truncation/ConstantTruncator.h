@@ -27,7 +27,7 @@
 namespace chisel
 {
 
-    class ConstantTruncator : Truncator
+    class ConstantTruncator : public Truncator
     {
         public:
             ConstantTruncator() = default;
@@ -38,11 +38,14 @@ namespace chisel
 
             }
 
-            virtual ~ConstantTruncator() = default;
+            virtual ~ConstantTruncator()
+            {
+
+            }
 
             inline void SetTruncationDistance(float value) { truncationDistance = value; }
 
-            float GetTruncationDistance(float reading)
+            float GetTruncationDistance(float reading) const
             {
                 return truncationDistance;
             }
@@ -51,6 +54,8 @@ namespace chisel
             float truncationDistance;
 
     };
+    typedef std::shared_ptr<ConstantTruncator> ConstantTruncatorPtr;
+    typedef std::shared_ptr<const ConstantTruncator> ConstantTruncatorConstPtr;
 
 } // namespace chisel 
 

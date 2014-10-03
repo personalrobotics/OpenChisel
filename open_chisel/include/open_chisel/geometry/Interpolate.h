@@ -19,19 +19,21 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <open_chisel/mesh/Mesh.h>
+
+#ifndef INTERPOLATE_H_
+#define INTERPOLATE_H_
 
 namespace chisel
 {
-
-    Mesh::Mesh()
+    inline float LinearInterpolate(float s, float e, float t)
     {
-
+        return s+(e-s)*t;
     }
 
-    Mesh::~Mesh()
+    inline float BilinearInterpolate(float c00, float c10, float c01, float c11, float tx, float ty)
     {
-
+        return LinearInterpolate(LinearInterpolate(c00, c10, tx), LinearInterpolate(c01, c11, tx), ty);
     }
+}
 
-} // namespace chisel 
+#endif // INTERPOLATE_H_ 

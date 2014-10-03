@@ -26,6 +26,8 @@
 #include <unordered_map>
 
 #include <open_chisel/mesh/Mesh.h>
+#include <open_chisel/ColorVoxel.h>
+#include <open_chisel/DistVoxel.h>
 #include "Chunk.h"
 
 namespace chisel
@@ -53,7 +55,7 @@ namespace chisel
     {
         public:
             ChunkManager();
-            ChunkManager(const Eigen::Vector3i& chunkSize, float voxelResolution);
+            ChunkManager(const Eigen::Vector3i& chunkSize, float voxelResolution, bool color);
             virtual ~ChunkManager();
 
             inline const ChunkMap& GetChunks() const { return chunks; }
@@ -93,18 +95,40 @@ namespace chisel
             inline bool HasChunk(int x, int y, int z) const { return HasChunk(ChunkID(x, y, z)); }
             inline ChunkPtr GetChunk(int x, int y, int z) const { return GetChunk(ChunkID(x, y, z)); }
 
-            inline ChunkID GetIDAt(const Vec3& pos)
+            inline ChunkPtr GetChunkAt(const Vec3& pos)
             {
-                return ChunkID(static_cast<int>(std::floor(pos(0) / chunkSize(0))),
-                               static_cast<int>(std::floor(pos(1) / chunkSize(1))),
-                               static_cast<int>(std::floor(pos(2) / chunkSize(2))));
+                ChunkID id = GetIDAt(pos);
+
+                if (HasChunk(id))
+                {
+                    return GetChunk(id);
+                }
+
+                return ChunkPtr();
             }
+
+            inline ChunkID GetIDAt(const Vec3& pos) const
+            {
+                static const float roundingFactorX = 1.0f / (chunkSize(0) * voxelResolutionMeters);
+                static const float roundingFactorY = 1.0f / (chunkSize(1) * voxelResolutionMeters);
+                static const float roundingFactorZ = 1.0f / (chunkSize(2) * voxelResolutionMeters);
+
+                return ChunkID(static_cast<int>(std::floor(pos(0) * roundingFactorX)),
+                               static_cast<int>(std::floor(pos(1) * roundingFactorY)),
+                               static_cast<int>(std::floor(pos(2) * roundingFactorZ)));
+            }
+
+            const DistVoxel* GetDistanceVoxel(const Vec3& pos);
+            const ColorVoxel* GetColorVoxel(const Vec3& pos);
 
             void GetChunkIDsIntersecting(const AABB& box, ChunkIDList* chunkList);
             void GetChunkIDsIntersecting(const Frustum& frustum, ChunkIDList* chunkList);
             void CreateChunk(const ChunkID& id);
 
             void GenerateMesh(const ChunkPtr& chunk, Mesh* mesh);
+            void ColorizeMesh(Mesh* mesh);
+            Vec3 InterpolateColor(const Vec3& colorPos);
+
             void CacheCentroids();
             void ExtractBorderVoxelMesh(const ChunkPtr& chunk, const Eigen::Vector3i& index, const Eigen::Vector3f& coordinates, VertIndex* nextMeshIndex, Mesh* mesh);
             void ExtractInsideVoxelMesh(const ChunkPtr& chunk, const Eigen::Vector3i& index, const Vec3& coords, VertIndex* nextMeshIndex, Mesh* mesh);
@@ -115,8 +139,15 @@ namespace chisel
             inline MeshPtr& GetMutableMesh(const ChunkID& chunkID) { return allMeshes.at(chunkID); }
             inline bool HasMesh(const ChunkID& chunkID) const { return allMeshes.find(chunkID) != allMeshes.end(); }
 
+            inline bool GetUseColor() { return useColor; }
+
             void RecomptueMesh(const ChunkID& chunkID);
             void RecomputeMeshes(const ChunkIDList& chunks);
+
+            inline const Eigen::Vector3i& GetChunkSize() const { return chunkSize; }
+            inline float GetResolution() const { return voxelResolutionMeters; }
+
+            void Reset();
 
             EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         protected:
@@ -126,6 +157,7 @@ namespace chisel
             Vec3List centroids;
             Eigen::Matrix<int, 3, 8> cubeIndexOffsets;
             MeshMap allMeshes;
+            bool useColor;
     };
 
     typedef std::shared_ptr<ChunkManager> ChunkManagerPtr;

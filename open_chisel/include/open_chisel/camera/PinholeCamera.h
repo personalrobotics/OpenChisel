@@ -48,7 +48,8 @@ namespace chisel
             inline void SetHeight(int value) { height = value; }
             inline float GetNearPlane() const { return nearPlane; }
             inline float GetFarPlane() const { return farPlane; }
-
+            inline void SetNearPlane(float value) { nearPlane = value; }
+            inline void SetFarPlane(float value) { farPlane = value; }
 
             void SetupFrustum(const Transform& view, Frustum* frustum) const;
 

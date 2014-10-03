@@ -32,7 +32,7 @@ namespace chisel
     ChunkManager::ChunkManager() :
             chunkSize(16, 16, 16), voxelResolutionMeters(0.03)
     {
-
+        CacheCentroids();
     }
 
     ChunkManager::~ChunkManager()
@@ -40,10 +40,10 @@ namespace chisel
 
     }
 
-    ChunkManager::ChunkManager(const Eigen::Vector3i& size, float res) :
-            chunkSize(size), voxelResolutionMeters(res)
+    ChunkManager::ChunkManager(const Eigen::Vector3i& size, float res, bool color) :
+            chunkSize(size), voxelResolutionMeters(res), useColor(color)
     {
-
+        CacheCentroids();
     }
 
     void ChunkManager::CacheCentroids()
@@ -108,6 +108,14 @@ namespace chisel
 
         ChunkPtr chunk = GetChunk(chunkID);
         GenerateMesh(chunk, mesh.get());
+
+        if(useColor)
+        {
+            ColorizeMesh(mesh.get());
+        }
+
+        if(!mesh->vertices.empty())
+            allMeshes[chunkID] = mesh;
     }
 
     void ChunkManager::RecomputeMeshes(const ChunkIDList& chunks)
@@ -120,7 +128,13 @@ namespace chisel
 
     void ChunkManager::CreateChunk(const ChunkID& id)
     {
-        AddChunk(std::allocate_shared<Chunk>(Eigen::aligned_allocator<Chunk>(), id, chunkSize, voxelResolutionMeters));
+        AddChunk(std::allocate_shared<Chunk>(Eigen::aligned_allocator<Chunk>(), id, chunkSize, voxelResolutionMeters, useColor));
+    }
+
+    void ChunkManager::Reset()
+    {
+        allMeshes.clear();
+        chunks.clear();
     }
 
     void ChunkManager::GetChunkIDsIntersecting(const Frustum& frustum, ChunkIDList* chunkList)
@@ -133,13 +147,17 @@ namespace chisel
         ChunkID minID = GetIDAt(frustumAABB.min);
         ChunkID maxID = GetIDAt(frustumAABB.max) + Eigen::Vector3i(1, 1, 1);
 
-        for (int x = minID(0); x < maxID(0); x++)
+        //printf("FrustumAABB: %f %f %f %f %f %f\n", frustumAABB.min.x(), frustumAABB.min.y(), frustumAABB.min.z(), frustumAABB.max.x(), frustumAABB.max.y(), frustumAABB.max.z());
+        //printf("Frustum min: %d %d %d max: %d %d %d\n", minID.x(), minID.y(), minID.z(), maxID.x(), maxID.y(), maxID.z());
+        for (int x = minID(0) - 1; x <= maxID(0); x++)
         {
-            for (int y = minID(1); y < maxID(1); y++)
+            for (int y = minID(1) - 1; y <= maxID(1); y++)
             {
-                for (int z = minID(2); z < maxID(2); z++)
+                for (int z = minID(2) - 1; z <= maxID(2); z++)
                 {
-                    AABB chunkBox(Vec3(x * chunkSize(0), y * chunkSize(1), z * chunkSize(2)), chunkSize.cast<float>());
+                    Vec3 min = Vec3(x * chunkSize(0), y * chunkSize(1), z * chunkSize(2)) * voxelResolutionMeters;
+                    Vec3 max = min + chunkSize.cast<float>() * voxelResolutionMeters;
+                    AABB chunkBox(min, max);
                     if(frustum.Intersects(chunkBox))
                     {
                         chunkList->push_back(ChunkID(x, y, z));
@@ -147,6 +165,8 @@ namespace chisel
                 }
             }
         }
+
+        //printf("%lu chunks intersect frustum\n", chunkList->size());
     }
 
     void ChunkManager::ExtractInsideVoxelMesh(const ChunkPtr& chunk, const Eigen::Vector3i& index, const Vec3& coords, VertIndex* nextMeshIndex, Mesh* mesh)
@@ -258,6 +278,7 @@ namespace chisel
     {
         assert(mesh != nullptr);
 
+        mesh->Clear();
         const int maxX = chunkSize(0);
         const int maxY = chunkSize(1);
         const int maxZ = chunkSize(2);
@@ -316,8 +337,129 @@ namespace chisel
             }
         }
 
+        //printf("Generated a new mesh with %lu verts, %lu norm, and %lu idx\n", mesh->vertices.size(), mesh->normals.size(), mesh->indices.size());
+
         assert(mesh->vertices.size() == mesh->normals.size());
-        assert(mesh->vertices.size() == mesh->indices.size() * 3);
+        assert(mesh->vertices.size() == mesh->indices.size());
+    }
+
+    Vec3 ChunkManager::InterpolateColor(const Vec3& colorPos)
+    {
+        const float& x = colorPos(0);
+        const float& y = colorPos(1);
+        const float& z = colorPos(2);
+        const int x_0 = static_cast<int>(std::floor(x / voxelResolutionMeters));
+        const int y_0 = static_cast<int>(std::floor(y / voxelResolutionMeters));
+        const int z_0 = static_cast<int>(std::floor(z / voxelResolutionMeters));
+        const int x_1 = x_0 + 1;
+        const int y_1 = y_0 + 1;
+        const int z_1 = z_0 + 1;
+
+
+        const ColorVoxel* v_000 = GetColorVoxel(Vec3(x_0, y_0, z_0));
+        const ColorVoxel* v_001 = GetColorVoxel(Vec3(x_0, y_0, z_1));
+        const ColorVoxel* v_011 = GetColorVoxel(Vec3(x_0, y_1, z_1));
+        const ColorVoxel* v_111 = GetColorVoxel(Vec3(x_1, y_1, z_1));
+        const ColorVoxel* v_110 = GetColorVoxel(Vec3(x_1, y_1, z_0));
+        const ColorVoxel* v_100 = GetColorVoxel(Vec3(x_1, y_0, z_0));
+        const ColorVoxel* v_010 = GetColorVoxel(Vec3(x_0, y_1, z_0));
+        const ColorVoxel* v_101 = GetColorVoxel(Vec3(x_1, y_0, z_1));
+
+        if(!v_000 || !v_001 || !v_011 || !v_111 || !v_110 || !v_100 || v_010 || v_101)
+        {
+            const ChunkID& chunkID = GetIDAt(colorPos);
+
+            if(!HasChunk(chunkID))
+            {
+                return Vec3(0, 0, 0);
+            }
+            else
+            {
+                const ChunkPtr& chunk = GetChunk(chunkID);
+                return chunk->GetColorAt(colorPos);
+            }
+        }
+
+        float xd = (x - x_0) / (x_1 - x_0);
+        float yd = (y - y_0) / (y_1 - y_0);
+        float zd = (z - z_0) / (z_1 - z_0);
+        float red, green, blue = 0.0f;
+        {
+            float c_00 = v_000->GetRed() * (1 - xd) + v_100->GetRed() * xd;
+            float c_10 = v_010->GetRed() * (1 - xd) + v_110->GetRed() * xd;
+            float c_01 = v_001->GetRed() * (1 - xd) + v_101->GetRed() * xd;
+            float c_11 = v_011->GetRed() * (1 - xd) + v_111->GetRed() * xd;
+            float c_0 = c_00 * (1 - yd) + c_10 * yd;
+            float c_1 = c_01 * (1 - yd) + c_11 * yd;
+            float c = c_0 * (1 - zd) + c_1 * zd;
+            red = c / 255.0f;
+        }
+        {
+            float c_00 = v_000->GetGreen() * (1 - xd) + v_100->GetGreen() * xd;
+            float c_10 = v_010->GetGreen() * (1 - xd) + v_110->GetGreen() * xd;
+            float c_01 = v_001->GetGreen() * (1 - xd) + v_101->GetGreen() * xd;
+            float c_11 = v_011->GetGreen() * (1 - xd) + v_111->GetGreen() * xd;
+            float c_0 = c_00 * (1 - yd) + c_10 * yd;
+            float c_1 = c_01 * (1 - yd) + c_11 * yd;
+            float c = c_0 * (1 - zd) + c_1 * zd;
+            green = c / 255.0f;
+        }
+        {
+            float c_00 = v_000->GetBlue() * (1 - xd) + v_100->GetBlue()  * xd;
+            float c_10 = v_010->GetBlue() * (1 - xd) + v_110->GetBlue()  * xd;
+            float c_01 = v_001->GetBlue() * (1 - xd) + v_101->GetBlue()  * xd;
+            float c_11 = v_011->GetBlue() * (1 - xd) + v_111->GetBlue()  * xd;
+            float c_0 = c_00 * (1 - yd) + c_10 * yd;
+            float c_1 = c_01 * (1 - yd) + c_11 * yd;
+            float c = c_0 * (1 - zd) + c_1 * zd;
+            blue = c / 255.0f;
+         }
+
+        return Vec3(red, green, blue);
+    }
+
+    const DistVoxel* ChunkManager::GetDistanceVoxel(const Vec3& pos)
+    {
+        ChunkPtr chunk = GetChunkAt(pos);
+
+        if(chunk.get())
+        {
+            return &(chunk->GetDistVoxel(chunk->GetVoxelID(pos)));
+        }
+        else return nullptr;
+    }
+
+    const ColorVoxel* ChunkManager::GetColorVoxel(const Vec3& pos)
+    {
+        ChunkPtr chunk = GetChunkAt(pos);
+
+        if(chunk.get())
+        {
+            chisel::AABB chunkAABB = chunk->ComputeBoundingBox();
+
+            if(chunkAABB.Contains(pos))
+            {
+                return &(chunk->GetColorVoxel(chunk->GetVoxelID(pos)));
+            }
+            else
+            {
+                return nullptr;
+            }
+        }
+        else return nullptr;
+    }
+
+
+    void ChunkManager::ColorizeMesh(Mesh* mesh)
+    {
+        assert(mesh != nullptr);
+
+        mesh->colors.clear();
+        for (size_t i = 0; i < mesh->vertices.size(); i++)
+        {
+            const Vec3& vertex = mesh->vertices.at(i);
+            mesh->colors.push_back(InterpolateColor(vertex));
+        }
     }
 
 } // namespace chisel 

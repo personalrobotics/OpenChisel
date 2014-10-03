@@ -40,7 +40,7 @@ namespace chisel
         const float& x = point(0);
         const float& y = point(1);
         const float& z = point(2);
-        assert(z > 0);
+
         return Vec3(intrinsics.GetFx() * (x / z) + intrinsics.GetCx(), intrinsics.GetFy() * (y / z) + intrinsics.GetCy(), z);
     }
 
@@ -60,7 +60,7 @@ namespace chisel
 
     bool PinholeCamera::IsPointOnImage(const Vec3& point) const
     {
-        return point(2) >= 0 && point(0) >= 0 && point(1) >= 0 && point(0) < width && point(1) < height;
+        return point(0) >= 0 && point(1) >= 0 && point(0) < width && point(1) < height;
     }
 
 } // namespace chisel 

@@ -30,10 +30,17 @@ namespace chisel
 
     }
 
-    Chunk::Chunk(const ChunkID id, const Eigen::Vector3i& nv, float r) :
+    Chunk::Chunk(const ChunkID id, const Eigen::Vector3i& nv, float r, bool useColor) :
             ID(id), numVoxels(nv), voxelResolutionMeters(r)
     {
         AllocateDistVoxels();
+
+        if(useColor)
+        {
+            AllocateColorVoxels();
+        }
+
+        origin = Vec3(numVoxels(0) * ID(0) * voxelResolutionMeters, numVoxels(1) * ID(1) * voxelResolutionMeters, numVoxels(2) * ID(2) * voxelResolutionMeters);
     }
 
     Chunk::~Chunk()
@@ -48,13 +55,45 @@ namespace chisel
         voxels.resize(totalNum, DistVoxel());
     }
 
+    void Chunk::AllocateColorVoxels()
+    {
+        int totalNum = GetTotalNumVoxels();
+        colors.clear();
+        colors.resize(totalNum, ColorVoxel());
+    }
+
     AABB Chunk::ComputeBoundingBox()
     {
-        Vec3 pos = ID.cast<float>() * voxelResolutionMeters;
+        Vec3 pos = origin;
         Vec3 size = numVoxels.cast<float>() * voxelResolutionMeters;
         return AABB(pos, pos + size);
     }
 
+    VoxelID Chunk::GetVoxelID(const Vec3& worldPos)
+    {
+        Vec3 chunkPos = (worldPos - origin) / voxelResolutionMeters;
+        return GetVoxelID(static_cast<int>(chunkPos(0)), static_cast<int>(chunkPos(1)), static_cast<int>(chunkPos(2)));
+    }
+
+    Vec3 Chunk::GetColorAt(const Vec3& pos)
+    {
+        if(ComputeBoundingBox().Contains(pos))
+        {
+            Vec3 chunkPos = (pos - origin) / voxelResolutionMeters;
+            int chunkX = static_cast<int>(chunkPos(0));
+            int chunkY = static_cast<int>(chunkPos(1));
+            int chunkZ = static_cast<int>(chunkPos(2));
+
+            if(IsCoordValid(chunkX, chunkY, chunkZ))
+            {
+                const ColorVoxel& color = GetColorVoxel(chunkX, chunkY, chunkZ);
+                float maxVal = static_cast<float>(std::numeric_limits<uint8_t>::max());
+                return Vec3(static_cast<float>(color.GetRed()) / maxVal, static_cast<float>(color.GetGreen()) / maxVal, static_cast<float>(color.GetBlue()) / maxVal);
+            }
+        }
+
+        return Vec3::Zero();
+    }
 
 
 } // namespace chisel 

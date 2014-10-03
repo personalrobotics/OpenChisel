@@ -71,11 +71,11 @@ namespace chisel
             // Now we get the signed distance from the AABB vertex that's furthest down
             // the frustum planes normal, and if the signed distance is negative, then
             // the entire bounding box is behind the frustum plane.
-            if (axisVert.dot(normal) + plane->distance < 0.0f)
-                return false;
+            if (axisVert.dot(normal) + plane->distance > 0.0f)
+                return true;
         }
 
-        return true;
+        return false;
     }
 
     bool Frustum::Contains(const Vec3& point) const

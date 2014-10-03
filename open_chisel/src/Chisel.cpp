@@ -21,17 +21,18 @@
 
 #include <open_chisel/Chisel.h>
 
+#include <open_chisel/io/PLY.h>
+
 namespace chisel
 {
 
     Chisel::Chisel()
     {
         // TODO Auto-generated constructor stub
-
     }
 
-    Chisel::Chisel(const Eigen::Vector3i& chunkSize, float voxelResolution) :
-            chunkManager(chunkSize, voxelResolution)
+    Chisel::Chisel(const Eigen::Vector3i& chunkSize, float voxelResolution, bool useColor) :
+            chunkManager(chunkSize, voxelResolution, useColor)
     {
 
     }
@@ -39,6 +40,12 @@ namespace chisel
     Chisel::~Chisel()
     {
         // TODO Auto-generated destructor stub
+    }
+
+    void Chisel::Reset()
+    {
+        chunkManager.Reset();
+        meshesToUpdate.clear();
     }
 
     void Chisel::UpdateMeshes()
@@ -53,6 +60,44 @@ namespace chisel
        {
            chunkManager.RemoveChunk(chunkID);
        }
+    }
+
+    bool Chisel::SaveAllMeshesToPLY(const std::string& filename)
+    {
+        printf("Saving all meshes to PLY file...\n");
+
+        chisel::MeshPtr fullMesh(new chisel::Mesh());
+
+        size_t v = 0;
+        for (const std::pair<ChunkID, MeshPtr>& it : chunkManager.GetAllMeshes())
+        {
+            for (const Vec3& vert : it.second->vertices)
+            {
+                fullMesh->vertices.push_back(vert);
+                fullMesh->indices.push_back(v);
+                v++;
+            }
+
+            for (const Vec3& color : it.second->colors)
+            {
+                fullMesh->colors.push_back(color);
+            }
+
+            for (const Vec3& normal : it.second->normals)
+            {
+                fullMesh->normals.push_back(normal);
+            }
+        }
+
+        printf("Full mesh has %lu verts\n", v);
+        bool success = SaveMeshPLYASCII(filename, fullMesh);
+
+        if (!success)
+        {
+            printf("Saving failed!\n");
+        }
+
+        return success;
     }
 
 } // namespace chisel 

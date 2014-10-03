@@ -28,7 +28,7 @@
 
 namespace chisel
 {
-    typedef uint16_t VertIndex;
+    typedef size_t VertIndex;
     typedef std::vector<VertIndex> VertIndexList;
     class Mesh
     {
@@ -37,10 +37,10 @@ namespace chisel
             Mesh();
             virtual ~Mesh();
 
-            inline bool HasVertices() { return !vertices.empty(); }
-            inline bool HasNormals() { return !normals.empty(); }
-            inline bool HasColors() { return !colors.empty(); }
-            inline bool HasIndices() { return !indices.empty(); }
+            inline bool HasVertices() const { return !vertices.empty(); }
+            inline bool HasNormals() const { return !normals.empty(); }
+            inline bool HasColors() const { return !colors.empty(); }
+            inline bool HasIndices() const { return !indices.empty(); }
 
             inline void Clear()
             {

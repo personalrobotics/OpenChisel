@@ -36,7 +36,7 @@ namespace chisel
     {
         public:
             Chisel();
-            Chisel(const Eigen::Vector3i& chunkSize, float voxelResolution);
+            Chisel(const Eigen::Vector3i& chunkSize, float voxelResolution, bool useColor);
             virtual ~Chisel();
 
             inline const ChunkManager& GetChunkManager() const { return chunkManager; }
@@ -51,11 +51,14 @@ namespace chisel
                     ChunkIDList chunksIntersecting;
                     chunkManager.GetChunkIDsIntersecting(frustum, &chunksIntersecting);
 
+
                     ChunkIDList garbageChunks;
                     for (const ChunkID& chunkID : chunksIntersecting)
                     {
+                        bool chunkNew = false;
                         if (!chunkManager.HasChunk(chunkID))
                         {
+                           chunkNew = true;
                            chunkManager.CreateChunk(chunkID);
                         }
 
@@ -66,7 +69,42 @@ namespace chisel
                         {
                             meshesToUpdate.push_back(chunkID);
                         }
-                        else
+                        else if(chunkNew)
+                        {
+                            garbageChunks.push_back(chunkID);
+                        }
+                    }
+
+                    GarbageCollect(garbageChunks);
+            }
+
+            template <class DataType, class ColorType> void IntegrateDepthScanColor(const ProjectionIntegrator& integrator, const std::shared_ptr<const DepthImage<DataType> >& depthImage,  const Transform& depthExtrinsic, const PinholeCamera& depthCamera, const std::shared_ptr<const ColorImage<ColorType> >& colorImage, const Transform& colorExtrinsic, const PinholeCamera& colorCamera)
+            {
+                    Frustum frustum;
+                    depthCamera.SetupFrustum(depthExtrinsic, &frustum);
+
+                    ChunkIDList chunksIntersecting;
+                    chunkManager.GetChunkIDsIntersecting(frustum, &chunksIntersecting);
+
+
+                    ChunkIDList garbageChunks;
+                    for (const ChunkID& chunkID : chunksIntersecting)
+                    {
+                        bool chunkNew = false;
+                        if (!chunkManager.HasChunk(chunkID))
+                        {
+                           chunkNew = true;
+                           chunkManager.CreateChunk(chunkID);
+                        }
+
+                        ChunkPtr chunk = chunkManager.GetChunk(chunkID);
+                        bool needsUpdate = integrator.IntegrateColor(depthImage, depthCamera, depthExtrinsic, colorImage, colorCamera, colorExtrinsic, chunk.get());
+
+                        if (needsUpdate)
+                        {
+                            meshesToUpdate.push_back(chunkID);
+                        }
+                        else if(chunkNew)
                         {
                             garbageChunks.push_back(chunkID);
                         }
@@ -78,11 +116,16 @@ namespace chisel
             void GarbageCollect(const ChunkIDList& chunks);
             void UpdateMeshes();
 
+            bool SaveAllMeshesToPLY(const std::string& filename);
+            void Reset();
+
         protected:
             ChunkManager chunkManager;
             ChunkIDList meshesToUpdate;
 
     };
+    typedef std::shared_ptr<Chisel> ChiselPtr;
+    typedef std::shared_ptr<const Chisel> ChiselConstPtr;
 
 } // namespace chisel 
 

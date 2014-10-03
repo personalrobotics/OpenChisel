@@ -19,14 +19,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "MarchingCubes.h"
+#include <open_chisel/marching_cubes/MarchingCubes.h>
 
 namespace chisel
 {
     // Lookup table from the 256 possible cube configurations from
     // CalculateVertexConfigurationIndex() to the 0-5 triplets the give the edges
     // where the triangle vertices lie.
-    uint8_t MarchingCubes::triangleTable[256][16] =
+    int MarchingCubes::triangleTable[256][16] =
     {
             { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
             {  0,  8,  3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
@@ -288,7 +288,7 @@ namespace chisel
 
     // Lookup table from the 12 cube edge indices to their corresponding corner
     // indices.
-    uint8_t MarchingCubes::edgeIndexPairs[12][2] =
+    int MarchingCubes::edgeIndexPairs[12][2] =
     {
         { 0, 1 },
         { 1, 2 },

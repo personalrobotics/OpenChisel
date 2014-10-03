@@ -52,7 +52,8 @@ namespace chisel
 
             inline void Integrate(const float& distUpdate, const uint16_t weightUpdate)
             {
-                float newDist = (weight * sdf + weightUpdate * distUpdate) / (weightUpdate + weight);
+                float oldSDF = GetSDF();
+                float newDist = (weight * oldSDF + weightUpdate * distUpdate) / (weightUpdate + weight);
                 SetSDF(newDist);
                 SetWeight(weight + weightUpdate);
             }

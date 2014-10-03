@@ -14,6 +14,7 @@ rosbuild_init()
 find_package(Eigen REQUIRED)
 include_directories(${Eigen_INCLUDE_DIRS})
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++0x")
+
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
@@ -29,6 +30,7 @@ rosbuild_add_library(${PROJECT_NAME}
 	src/Chunk.cpp 
 	src/ChunkManager.cpp 
 	src/DistVoxel.cpp  
+	src/ColorVoxel.cpp
 	src/geometry/AABB.cpp
 	src/geometry/Plane.cpp
 	src/geometry/Frustum.cpp
@@ -36,7 +38,10 @@ rosbuild_add_library(${PROJECT_NAME}
 	src/camera/PinholeCamera.cpp
 	src/pointcloud/PointCloud.cpp
 	src/ProjectionIntegrator.cpp
-	src/Chisel.cpp)
+	src/Chisel.cpp
+	src/mesh/Mesh.cpp
+	src/marching_cubes/MarchingCubes.cpp
+	src/io/PLY.cpp)
 
 #target_link_libraries(${PROJECT_NAME} another_library)
 #rosbuild_add_boost_directories()

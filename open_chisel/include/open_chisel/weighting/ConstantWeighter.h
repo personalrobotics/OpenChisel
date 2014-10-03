@@ -27,7 +27,7 @@
 namespace chisel
 {
 
-    class ConstantWeighter : Weighter
+    class ConstantWeighter : public Weighter
     {
         public:
             ConstantWeighter() = default;
@@ -35,9 +35,12 @@ namespace chisel
             {
                 weight = w;
             }
-            virtual ~ConstantWeighter() = default;
+            virtual ~ConstantWeighter()
+            {
 
-            virtual uint16_t GetWeight(float surfaceDist)
+            }
+
+            virtual uint16_t GetWeight(float surfaceDist) const
             {
                 return weight;
             }
@@ -46,6 +49,8 @@ namespace chisel
             uint16_t weight;
 
     };
+    typedef std::shared_ptr<ConstantWeighter> ConstantWeighterPtr;
+    typedef std::shared_ptr<const ConstantWeighter> ConstantWeighterConstPtr;
 
 } // namespace chisel 
 

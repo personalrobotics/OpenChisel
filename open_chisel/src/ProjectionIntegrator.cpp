@@ -30,7 +30,7 @@ namespace chisel
 
     }
 
-    ProjectionIntegrator::ProjectionIntegrator(const Truncator& t, const Weighter& w, float crvDist, bool enableCrv) :
+    ProjectionIntegrator::ProjectionIntegrator(const TruncatorPtr& t, const WeighterPtr& w, float crvDist, bool enableCrv) :
             truncator(t), weighter(w), carvingDist(crvDist), enableVoxelCarving(enableCrv)
     {
 

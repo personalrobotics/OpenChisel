@@ -19,17 +19,18 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <open_chisel/mesh/Mesh.h>
+#include <open_chisel/ColorVoxel.h>
 
 namespace chisel
 {
 
-    Mesh::Mesh()
+    ColorVoxel::ColorVoxel() :
+            red(0), green(0), blue(0), weight(0)
     {
 
     }
 
-    Mesh::~Mesh()
+    ColorVoxel::~ColorVoxel()
     {
 
     }
