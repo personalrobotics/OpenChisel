@@ -68,28 +68,15 @@ namespace chisel_ros
         transform.translation()(1) = tf.getOrigin().y();
         transform.translation()(2) = tf.getOrigin().z();
 
-        tf::Matrix3x3 basis = tf.getBasis();
-        //chisel::Quaternion quat;
 
-        //quat.x() = tf.getRotation().x();
-        //quat.y() = tf.getRotation().y();
-        //quat.z() = tf.getRotation().z();
-        //quat.w() = tf.getRotation().w();
+        chisel::Quaternion quat;
+        quat.x() = tf.getRotation().x();
+        quat.y() = tf.getRotation().y();
+        quat.z() = tf.getRotation().z();
+        quat.w() = tf.getRotation().w();
+        transform.linear() = quat.toRotationMatrix();
 
-        chisel::Mat3x3 chiselBasis;
-        for(int i = 0; i < 3; i++)
-        {
-            for(int j = 0; j < 3; j++)
-            {
-                chiselBasis(i,j) = basis[i].m_floats[j];
-            }
-        }
-
-        transform.linear() = chiselBasis;
-
-
-
-        return transform;
+        return transform.inverse();
     }
 
     inline chisel::PinholeCamera RosCameraToChiselCamera(const sensor_msgs::CameraInfoConstPtr& camera)

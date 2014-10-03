@@ -1,0 +1,32 @@
+<launch>
+    <machine name="local" address="localhost" default="true"/>
+    <node name="LSDSLAM" pkg="lsd_slam_core" type="live_slam">
+        <remap from="image" to="/camera/rgb/image_rect"/>
+        <remap from="camera_info" to="/camera/rgb/camera_info"/>
+    </node>
+    <node name="PoseConverter" pkg="message_to_tf" type="message_to_tf">
+        <param name="pose_topic" value="/lsd_slam/pose"/>
+        <param name="frame_id" value="/camera_rgb_optical_frame"/>
+        <param name="child_frame_id" value="/world"/>
+    </node>
+    <node name="Chisel" pkg="chisel_ros" type="ChiselNode" output="screen">
+        <param name="chunk_size_x" value="16"/>
+        <param name="chunk_size_y" value="16"/>
+        <param name="chunk_size_z" value="16"/>
+        <param name="truncation_dist_m" value="0.3"/>
+        <param name="integration_weight" value="1"/>
+        <param name="use_voxel_carving" value="true"/>
+        <param name="use_color" value="false"/>
+        <param name="carving_dist_m" value="0.08"/>
+        <param name="voxel_resolution_m" value="0.035"/>
+        <param name="base_transform" value="/world"/>
+        <param name="depth_image_transform" value="/camera_depth_optical_frame"/>
+        <param name="color_image_transform" value="/camera_rgb_optical_frame"/>
+
+        <remap from="/depth_image" to="/camera/depth_registered/image_rect"/>
+        <remap from="/depth_camera_info" to="/camera/depth/camera_info"/>
+        <remap from="/color_image" to="/camera/rgb/image_rect_color"/>
+        <remap from="/color_camera_info" to="/camera/rgb/camera_info"/>
+
+    </node>
+</launch>

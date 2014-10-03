@@ -1,0 +1,23 @@
+Header header
+
+#Chunk ID spatial position
+int ID_x
+int ID_y
+int ID_z
+
+#Chunk spatial hash value
+int spatial_hash
+
+#Size of a voxel in meters
+float32 resolution_meters
+
+#number of voxels in each dimension
+int num_voxels_x
+int num_voxels_y
+int num_voxels_z
+
+#Binary serialization of distances/weights
+int8[] distance_data
+
+#Binary serialization of colors/weights
+int8[] color_data
