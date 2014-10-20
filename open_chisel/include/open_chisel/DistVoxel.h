@@ -25,6 +25,8 @@
 #include <limits>
 #include <stdint.h>
 
+#include <open_chisel/FixedPointFloat.h>
+
 namespace chisel
 {
 
@@ -34,39 +36,43 @@ namespace chisel
             DistVoxel();
             virtual ~DistVoxel();
 
-            inline int16_t GetSDFInt() const { return sdf; }
-            inline void SetSDFInt(const int16_t& distance) { sdf = distance; }
+            inline FixedFloat16 GetSDFInt() const { return sdf; }
+            inline void SetSDFInt(const FixedFloat16& distance) { sdf = distance; }
 
             inline float GetSDF() const
             {
-                return static_cast<float>(sdf) / static_cast<float>(std::numeric_limits<int16_t>::max());
+                return FixedFloat16ToFloat(sdf);
             }
 
             inline void SetSDF(const float& distance)
             {
-                sdf = static_cast<uint16_t>(distance * std::numeric_limits<int16_t>::max());
+                sdf = FloatToFixedFloat16(distance);
             }
 
-            inline uint16_t GetWeight() const { return weight; }
-            inline void SetWeight(const uint16_t w) { weight = w; }
+            inline FixedFloat16 GetWeightInt() const { return weight; }
+            inline void SetWeightInt(const FixedFloat16& w) { weight = w; }
 
-            inline void Integrate(const float& distUpdate, const uint16_t weightUpdate)
+            inline float GetWeight() const { return UFixedFloat16ToFloat(weight); }
+            inline void SetWeight(const float& w) { weight = FloatToUFixedFloat16(w); }
+
+            inline void Integrate(const float& distUpdate, const float& weightUpdate)
             {
                 float oldSDF = GetSDF();
-                float newDist = (weight * oldSDF + weightUpdate * distUpdate) / (weightUpdate + weight);
+                float oldWeight = GetWeight();
+                float newDist = (oldWeight * oldSDF + weightUpdate * distUpdate) / (weightUpdate + oldWeight);
                 SetSDF(newDist);
-                SetWeight(weight + weightUpdate);
+                SetWeight(oldWeight + weightUpdate);
             }
 
             inline void Reset()
             {
-                sdf = 0;
+                sdf = FloatToFixedFloat16(0);
                 weight = 0;
             }
 
         protected:
-           int16_t sdf;
-           uint16_t weight;
+           FixedFloat16 sdf;
+           UFixedFloat16 weight;
     };
 
 } // namespace chisel 

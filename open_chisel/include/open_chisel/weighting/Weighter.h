@@ -34,7 +34,7 @@ namespace chisel
 
             }
 
-            virtual uint16_t GetWeight(float surfaceDist) const = 0;
+            virtual float GetWeight(float surfaceDist, float truncationDist) const = 0;
     };
     typedef std::shared_ptr<Weighter> WeighterPtr;
     typedef std::shared_ptr<const Weighter> WeighterConstPtr;

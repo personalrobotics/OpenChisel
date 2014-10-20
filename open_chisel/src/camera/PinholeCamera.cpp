@@ -40,8 +40,8 @@ namespace chisel
         const float& x = point(0);
         const float& y = point(1);
         const float& z = point(2);
-
-        return Vec3(intrinsics.GetFx() * (x / z) + intrinsics.GetCx(), intrinsics.GetFy() * (y / z) + intrinsics.GetCy(), z);
+        const float invZ = 1.0f / z;
+        return Vec3(intrinsics.GetFx() * x * invZ + intrinsics.GetCx(), intrinsics.GetFy() * y * invZ + intrinsics.GetCy(), z);
     }
 
     Vec3 PinholeCamera::UnprojectPoint(const Vec3& point) const

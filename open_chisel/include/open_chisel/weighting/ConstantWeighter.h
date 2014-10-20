@@ -31,7 +31,7 @@ namespace chisel
     {
         public:
             ConstantWeighter() = default;
-            ConstantWeighter(uint16_t w)
+            ConstantWeighter(float w)
             {
                 weight = w;
             }
@@ -40,13 +40,13 @@ namespace chisel
 
             }
 
-            virtual uint16_t GetWeight(float surfaceDist) const
+            virtual float GetWeight(float surfaceDist, float truncationDist) const
             {
-                return weight;
+                return weight / (2 * truncationDist);
             }
 
         protected:
-            uint16_t weight;
+            float weight;
 
     };
     typedef std::shared_ptr<ConstantWeighter> ConstantWeighterPtr;

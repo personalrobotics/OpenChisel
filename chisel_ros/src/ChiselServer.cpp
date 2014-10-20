@@ -68,6 +68,7 @@ namespace chisel_ros
     {
         chunkBoxTopic = boxTopic;
         chunkBoxPublisher = nh.advertise<visualization_msgs::Marker>(chunkBoxTopic, 1);
+        latestChunkPublisher = nh.advertise<visualization_msgs::Marker>(chunkBoxTopic + "/latest", 1);
     }
 
     void ChiselServer::SetupDepthPosePublisher(const std::string& depthPoseTopic)
@@ -311,6 +312,7 @@ namespace chisel_ros
 
     void ChiselServer::SetupProjectionIntegrator(const chisel::Vec4& truncation, uint16_t weight, bool useCarving, float carvingDist)
     {
+        projectionIntegrator.SetCentroids(GetChiselMap()->GetChunkManager().GetCentroids());
         projectionIntegrator.SetTruncator(chisel::TruncatorPtr(new chisel::QuadraticTruncator(truncation(0), truncation(1), truncation(2), truncation(3))));
         projectionIntegrator.SetWeighter(chisel::WeighterPtr(new chisel::ConstantWeighter(weight)));
         projectionIntegrator.SetCarvingDist(carvingDist);
@@ -323,17 +325,56 @@ namespace chisel_ros
         {
             if(useColor)
             {
-                printf("Integrating depth scan with color\n");
                 chiselMap->IntegrateDepthScanColor<DepthData, ColorData>(projectionIntegrator,  lastDepthImage, depthCamera.lastPose, depthCamera.cameraModel, lastColorImage, colorCamera.lastPose, colorCamera.cameraModel);
             }
             else
             {
-                printf("Integrating depth scan\n");
                 chiselMap->IntegrateDepthScan<DepthData>(projectionIntegrator, lastDepthImage, depthCamera.lastPose, depthCamera.cameraModel);
             }
+            PublishLatestChunkBoxes();
             chiselMap->UpdateMeshes();
             hasNewData = false;
         }
+    }
+
+    void ChiselServer::PublishLatestChunkBoxes()
+    {
+        const chisel::ChunkManager& chunkManager = chiselMap->GetChunkManager();
+        visualization_msgs::Marker marker;
+        marker.header.stamp = ros::Time::now();
+        marker.header.frame_id = baseTransform;
+        marker.ns = "chunk_box";
+        marker.type = visualization_msgs::Marker::CUBE_LIST;
+        marker.scale.x = chunkManager.GetChunkSize()(0) * chunkManager.GetResolution();
+        marker.scale.y = chunkManager.GetChunkSize()(1) * chunkManager.GetResolution();
+        marker.scale.z = chunkManager.GetChunkSize()(2) * chunkManager.GetResolution();
+        marker.pose.position.x = 0;
+        marker.pose.position.y = 0;
+        marker.pose.position.z = 0;
+        marker.pose.orientation.x = 0.0;
+        marker.pose.orientation.y = 0.0;
+        marker.pose.orientation.z = 0.0;
+        marker.pose.orientation.w = 1.0;
+        marker.color.r = 0.3f;
+        marker.color.g = 0.95f;
+        marker.color.b = 0.3f;
+        marker.color.a = 0.6f;
+        const chisel::ChunkSet& latest = chiselMap->GetMeshesToUpdate();
+        for (const std::pair<chisel::ChunkID, bool>& id : latest)
+        {
+            if(chunkManager.HasChunk(id.first))
+            {
+                chisel::AABB aabb = chunkManager.GetChunk(id.first)->ComputeBoundingBox();
+                chisel::Vec3 center = aabb.GetCenter();
+                geometry_msgs::Point pt;
+                pt.x = center.x();
+                pt.y = center.y();
+                pt.z = center.z();
+                marker.points.push_back(pt);
+            }
+        }
+
+        latestChunkPublisher.publish(marker);
     }
 
     void ChiselServer::PublishChunkBoxes()

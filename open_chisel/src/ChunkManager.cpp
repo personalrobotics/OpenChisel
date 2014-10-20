@@ -20,6 +20,7 @@
 // SOFTWARE.
 
 #include <assert.h>
+#include <open_chisel/threading/Threading.h>
 #include <open_chisel/ChunkManager.h>
 #include <open_chisel/geometry/Frustum.h>
 #include <open_chisel/geometry/AABB.h>
@@ -88,10 +89,12 @@ namespace chisel
     }
 
 
-    void ChunkManager::RecomptueMesh(const ChunkID& chunkID)
+    void ChunkManager::RecomptueMesh(const ChunkID& chunkID, std::mutex& mutex)
     {
+        mutex.lock();
         if (!HasChunk(chunkID))
         {
+            mutex.unlock();
             return;
         }
 
@@ -107,6 +110,8 @@ namespace chisel
 
 
         ChunkPtr chunk = GetChunk(chunkID);
+        mutex.unlock();
+
         GenerateMesh(chunk, mesh.get());
 
         if(useColor)
@@ -114,16 +119,27 @@ namespace chisel
             ColorizeMesh(mesh.get());
         }
 
+        mutex.lock();
         if(!mesh->vertices.empty())
             allMeshes[chunkID] = mesh;
+        mutex.unlock();
     }
 
-    void ChunkManager::RecomputeMeshes(const ChunkIDList& chunks)
+    void ChunkManager::RecomputeMeshes(const ChunkSet& chunkMeshes)
     {
-        for (const ChunkID& chunkID : chunks)
+
+        if (chunkMeshes.empty())
         {
-            RecomptueMesh(chunkID);
+            return;
         }
+
+        std::mutex mutex;
+        for (const std::pair<ChunkID, bool>& chunkID : chunks)
+        //parallel_for(chunks.begin(), chunks.end(), [this, &mutex](const ChunkID& chunkID)
+        {
+            this->RecomptueMesh(ChunkID(chunkID.first), mutex);
+        }
+
     }
 
     void ChunkManager::CreateChunk(const ChunkID& id)
@@ -149,11 +165,11 @@ namespace chisel
 
         //printf("FrustumAABB: %f %f %f %f %f %f\n", frustumAABB.min.x(), frustumAABB.min.y(), frustumAABB.min.z(), frustumAABB.max.x(), frustumAABB.max.y(), frustumAABB.max.z());
         //printf("Frustum min: %d %d %d max: %d %d %d\n", minID.x(), minID.y(), minID.z(), maxID.x(), maxID.y(), maxID.z());
-        for (int x = minID(0) - 1; x <= maxID(0); x++)
+        for (int x = minID(0) - 1; x <= maxID(0) + 1; x++)
         {
-            for (int y = minID(1) - 1; y <= maxID(1); y++)
+            for (int y = minID(1) - 1; y <= maxID(1) + 1; y++)
             {
-                for (int z = minID(2) - 1; z <= maxID(2); z++)
+                for (int z = minID(2) - 1; z <= maxID(2) + 1; z++)
                 {
                     Vec3 min = Vec3(x * chunkSize(0), y * chunkSize(1), z * chunkSize(2)) * voxelResolutionMeters;
                     Vec3 max = min + chunkSize.cast<float>() * voxelResolutionMeters;
@@ -181,9 +197,9 @@ namespace chisel
             Eigen::Vector3i corner_index = index + cubeIndexOffsets.col(i);
             const DistVoxel& thisVoxel = chunk->GetDistVoxel(corner_index.x(), corner_index.y(), corner_index.z());
 
-            // Do not extract a mesh here if one of the corners is unobserved and
+            // Do not extract a mesh here if one of the corner is unobserved and
             // outside the truncation region.
-            if (thisVoxel.GetWeight() == 0)
+            if (thisVoxel.GetWeightInt() == 0)
             {
                 allNeighborsObserved = false;
                 break;
@@ -213,7 +229,7 @@ namespace chisel
                 const DistVoxel& thisVoxel = chunk->GetDistVoxel(cornerIDX.x(), cornerIDX.y(), cornerIDX.z());
                 // Do not extract a mesh here if one of the corners is unobserved
                 // and outside the truncation region.
-                if (thisVoxel.GetWeight() == 0)
+                if (thisVoxel.GetWeightInt() == 0)
                 {
                     allNeighborsObserved = false;
                     break;
@@ -249,7 +265,7 @@ namespace chisel
                     const DistVoxel& thisVoxel = neighborChunk->GetDistVoxel(cornerIDX.x(), cornerIDX.y(), cornerIDX.z());
                     // Do not extract a mesh here if one of the corners is unobserved
                     // and outside the truncation region.
-                    if (thisVoxel.GetWeight() == 0)
+                    if (thisVoxel.GetWeightInt() == 0)
                     {
                         allNeighborsObserved = false;
                         break;
@@ -435,11 +451,10 @@ namespace chisel
 
         if(chunk.get())
         {
-            chisel::AABB chunkAABB = chunk->ComputeBoundingBox();
-
-            if(chunkAABB.Contains(pos))
+            const VoxelID& id = chunk->GetVoxelID(pos);
+            if (id >= 0 && id < chunk->GetTotalNumVoxels())
             {
-                return &(chunk->GetColorVoxel(chunk->GetVoxelID(pos)));
+                return &(chunk->GetColorVoxel(id));
             }
             else
             {
@@ -455,11 +470,53 @@ namespace chisel
         assert(mesh != nullptr);
 
         mesh->colors.clear();
+        mesh->colors.resize(mesh->vertices.size());
         for (size_t i = 0; i < mesh->vertices.size(); i++)
         {
             const Vec3& vertex = mesh->vertices.at(i);
-            mesh->colors.push_back(InterpolateColor(vertex));
+            const ColorVoxel* voxel = GetColorVoxel(vertex);
+            if(voxel)
+            {
+                mesh->colors[i] = Vec3(voxel->GetRed() / 255.0f, voxel->GetGreen() / 255.0f, voxel->GetBlue() / 255.0f);
+            }
+            else
+            {
+                mesh->colors[i] = Vec3(0, 0, 0);
+            }
         }
+    }
+
+
+    void ChunkManager::PrintMemoryStatistics()
+    {
+        float bigFloat = std::numeric_limits<float>::max();
+
+        chisel::AABB totalBounds;
+        totalBounds.min = chisel::Vec3(bigFloat, bigFloat, bigFloat);
+        totalBounds.max = chisel::Vec3(-bigFloat, -bigFloat, -bigFloat);
+
+        for (const std::pair<ChunkID, ChunkPtr>& chunk : chunks)
+        {
+            AABB bounds = chunk.second->ComputeBoundingBox();
+            for (int i = 0; i < 3; i++)
+            {
+                totalBounds.min(i) = std::min(totalBounds.min(i), bounds.min(i));
+                totalBounds.max(i) = std::max(totalBounds.max(i), bounds.max(i));
+            }
+        }
+
+
+        Vec3 ext = totalBounds.GetExtents();
+        Vec3 numVoxels = ext * 2 / voxelResolutionMeters;
+        float totalNum = numVoxels(0) * numVoxels(1) * numVoxels(2);
+
+        float maxMemory = totalNum * sizeof(DistVoxel) / 1000000.0f;
+
+        size_t currentNum = chunks.size() * (chunkSize(0) * chunkSize(1) * chunkSize(2));
+        float currentMemory = currentNum * sizeof(DistVoxel) / 1000000.0f;
+
+        printf("Theoretical max (MB): %f, Current (MB): %f\n", maxMemory, currentMemory);
+
     }
 
 } // namespace chisel 

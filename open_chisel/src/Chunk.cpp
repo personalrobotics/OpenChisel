@@ -72,7 +72,9 @@ namespace chisel
     VoxelID Chunk::GetVoxelID(const Vec3& worldPos)
     {
         Vec3 chunkPos = (worldPos - origin) / voxelResolutionMeters;
-        return GetVoxelID(static_cast<int>(chunkPos(0)), static_cast<int>(chunkPos(1)), static_cast<int>(chunkPos(2)));
+        return GetVoxelID(std::max(std::min(static_cast<int>(chunkPos(0)), numVoxels(0)), 0),
+                          std::max(std::min(static_cast<int>(chunkPos(1)), numVoxels(1)), 0),
+                          std::max(std::min(static_cast<int>(chunkPos(2)), numVoxels(2)), 0));
     }
 
     Vec3 Chunk::GetColorAt(const Vec3& pos)

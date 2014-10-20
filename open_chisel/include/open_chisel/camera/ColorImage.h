@@ -55,6 +55,15 @@ namespace chisel
                 return (col + row * width) * numChannels + channel;
             }
 
+            inline void At(int row, int col, DataType* colorOut) const
+            {
+                const int index = Index(row, col, 0);
+                for (int i = 0; i < numChannels; i++)
+                {
+                    colorOut[i] = data[index + i];
+                }
+            }
+
             inline const DataType& At(int row, int col, int channel) const
             {
                 const int index = Index(row, col, channel);

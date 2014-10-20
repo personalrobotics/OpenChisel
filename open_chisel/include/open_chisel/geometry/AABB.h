@@ -42,7 +42,7 @@ namespace chisel
             inline bool Contains(const Vec3& pos) const
             {
                 return pos(0) >= min(0) && pos(1) >= min(1) && pos(2) >= min(2) &&
-                       pos(0) < max(0) && pos(1) < max(1) && pos(2) < max(2);
+                       pos(0) <= max(0) && pos(1) <= max(1) && pos(2) <= max(2);
             }
 
             inline bool Intersects(const AABB& other) const

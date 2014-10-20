@@ -85,6 +85,7 @@ namespace chisel_ros
 
             void PublishMeshes();
             void PublishChunkBoxes();
+            void PublishLatestChunkBoxes();
             void PublishDepthPose();
             void PublishColorPose();
             void PublishDepthFrustum();
@@ -133,6 +134,7 @@ namespace chisel_ros
             std::string chunkBoxTopic;
             ros::Publisher meshPublisher;
             ros::Publisher chunkBoxPublisher;
+            ros::Publisher latestChunkPublisher;
             ros::ServiceServer resetServer;
             ros::ServiceServer pauseServer;
             ros::ServiceServer saveMeshServer;

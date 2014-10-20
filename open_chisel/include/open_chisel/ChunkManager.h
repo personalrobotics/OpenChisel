@@ -24,6 +24,7 @@
 
 #include <memory>
 #include <unordered_map>
+#include <mutex>
 
 #include <open_chisel/mesh/Mesh.h>
 #include <open_chisel/ColorVoxel.h>
@@ -48,6 +49,7 @@ namespace chisel
     };
 
     typedef std::unordered_map<ChunkID, ChunkPtr, ChunkHasher> ChunkMap;
+    typedef std::unordered_map<ChunkID, bool, ChunkHasher> ChunkSet;
     typedef std::unordered_map<ChunkID, MeshPtr, ChunkHasher> MeshMap;
     class Frustum;
     class AABB;
@@ -141,11 +143,15 @@ namespace chisel
 
             inline bool GetUseColor() { return useColor; }
 
-            void RecomptueMesh(const ChunkID& chunkID);
-            void RecomputeMeshes(const ChunkIDList& chunks);
+            void RecomptueMesh(const ChunkID& chunkID, std::mutex& mutex);
+            void RecomputeMeshes(const ChunkSet& chunks);
 
             inline const Eigen::Vector3i& GetChunkSize() const { return chunkSize; }
             inline float GetResolution() const { return voxelResolutionMeters; }
+
+            inline const Vec3List& GetCentroids() const { return centroids; }
+
+            void PrintMemoryStatistics();
 
             void Reset();
 

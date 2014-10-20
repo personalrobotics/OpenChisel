@@ -1,23 +1,22 @@
 <launch>
     <machine name="local" address="localhost" default="true"/>
 
-    <node name="Dataset" pkg="rosbag" type="play" output="screen" args="--clock --rate 100 --delay 5 /home/local_user/rgbd_dataset_freiburg3_long_office_household.bag">
+    <node name="Dataset" pkg="rosbag" type="play" output="screen" args="--clock --delay 5 /home/local_user/rgbd_dataset_freiburg3_long_office_household.bag">
 
     </node>
 
     <node name="RVIZ" pkg="rviz" type="rviz" output="screen">
 
-    </node>
-
-    <node name="Chisel" pkg="chisel_ros" type="ChiselNode" output="screen" cwd="node"> <!--launch-prefix="xterm -e gdb args" -->
-        <param name="chunk_size_x" value="8"/>
-        <param name="chunk_size_y" value="8"/>
-        <param name="chunk_size_z" value="8"/>
-        <param name="truncation_dist_m" value="0.1"/>
+    </node>   
+    <node name="Chisel" pkg="chisel_ros" type="ChiselNode" output="screen" launch-prefix="xterm -e gdb -args">
+        <param name="chunk_size_x" value="16"/>
+        <param name="chunk_size_y" value="16"/>
+        <param name="chunk_size_z" value="16"/>
+        <param name="truncation_scale" value="8.0"/>
         <param name="integration_weight" value="1"/>
         <param name="use_voxel_carving" value="true"/>
         <param name="use_color" value="true"/>
-        <param name="carving_dist_m" value="0.08"/>
+        <param name="carving_dist_m" value="0.1"/>
         <param name="voxel_resolution_m" value="0.02"/>
         <param name="far_plane_dist" value="2.0"/>
         <param name="base_transform" value="/world"/>

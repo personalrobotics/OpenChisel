@@ -69,15 +69,15 @@ namespace chisel
                     return;
                 }
 
-                uint8_t oldRed = GetRed();
+                float oldRed = static_cast<float>(GetRed());
                 float updatedRed = Saturate(static_cast<float>(weight * oldRed + weightUpdate * newRed) / (weightUpdate + weight));
                 red = static_cast<uint8_t>(updatedRed);
 
-                uint8_t oldGreen = GetGreen();
+                float oldGreen = static_cast<float>(GetGreen());
                 float updatedGreen = Saturate(static_cast<float>(weight * oldGreen + weightUpdate * newGreen) / (weightUpdate + weight));
                 green = static_cast<uint8_t>(updatedGreen);
 
-                uint8_t oldBlue = GetBlue();
+                float oldBlue = static_cast<float>(GetBlue());
                 float updatedBlue = Saturate(static_cast<float>(weight * oldBlue + weightUpdate * newBlue) / (weightUpdate + weight));
                 blue = static_cast<uint8_t>(updatedBlue);
 
