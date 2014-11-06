@@ -93,34 +93,40 @@ namespace chisel
                 }
                 return updated;
             }
-            template<class DataType, class ColorType> bool IntegrateColor(const std::shared_ptr<const DepthImage<DataType> >& depthImage, const PinholeCamera& depthCamera, const Transform& depthCameraPose, const std::shared_ptr<const ColorImage<ColorType, 3> >& colorImage, const PinholeCamera& colorCamera, const Transform& colorCameraPose, Chunk* chunk) const
+            template<class DataType, class ColorType> bool IntegrateColor(const std::shared_ptr<const DepthImage<DataType> >& depthImage, const PinholeCamera& depthCamera, const Transform& depthCameraPose, const std::shared_ptr<const ColorImage<ColorType> >& colorImage, const PinholeCamera& colorCamera, const Transform& colorCameraPose, Chunk* chunk) const
             {
                     assert(chunk != nullptr);
 
-                    Eigen::Vector3i numVoxels = chunk->GetNumVoxels();
                     float resolution = chunk->GetVoxelResolutionMeters();
                     Vec3 origin = chunk->GetOrigin();
                     float resolutionDiagonal = sqrt(3.0f) * resolution;
-                    Vec3 voxelCenter;
                     bool updated = false;
-                    uint8_t color[3];
+                    std::vector<size_t> indexes;
+                    indexes.resize(centroids.size());
                     for (size_t i = 0; i < centroids.size(); i++)
                     {
-                        voxelCenter = centroids[i] + origin;
+                        indexes[i] = i;
+                    }
+
+                    //for (size_t i = 0; i < centroids.size(); i++)
+                    parallel_for(indexes.begin(), indexes.end(), [&](const size_t& i)
+                    {
+                        Color<ColorType> color;
+                        Vec3 voxelCenter = centroids[i] + origin;
                         Vec3 voxelCenterInCamera = depthCameraPose.linear().transpose() * (voxelCenter - depthCameraPose.translation());
                         Vec3 cameraPos = depthCamera.ProjectPoint(voxelCenterInCamera);
 
                         if (!depthCamera.IsPointOnImage(cameraPos) || voxelCenterInCamera.z() < 0)
                         {
-                            continue;
+                            return;
                         }
 
                         float voxelDist = voxelCenterInCamera.z();
-                        float depth = depthImage->DepthAt(static_cast<int>(cameraPos(1)), static_cast<int>(cameraPos(0)));//depthImage->BilinearInterpolateDepth(cameraPos(0), cameraPos(1));
+                        float depth = depthImage->BilinearInterpolateDepth(cameraPos(0), cameraPos(1));
 
                         if(std::isnan(depth))
                         {
-                            continue;
+                            return;
                         }
 
                         float truncation = truncator->GetTruncationDistance(depth);
@@ -135,8 +141,9 @@ namespace chisel
                                 ColorVoxel& colorVoxel = chunk->GetColorVoxelMutable(i);
                                 int r = static_cast<int>(colorCameraPos(1));
                                 int c = static_cast<int>(colorCameraPos(0));
-                                colorImage->At(r, c, color);
-                                colorVoxel.Integrate(color[2], color[1], color[0], 1);
+                                colorImage->At(r, c, &color);
+                                colorVoxel.Integrate(color.red, color.green, color.blue, 1);
+
                             }
 
                             DistVoxel& voxel = chunk->GetDistVoxelMutable(i);
@@ -147,15 +154,16 @@ namespace chisel
                         else if (enableVoxelCarving && surfaceDist > truncation + carvingDist)
                         {
                             DistVoxel& voxel = chunk->GetDistVoxelMutable(i);
-                            if (voxel.GetWeightInt() > 0 && voxel.GetSDF() < -0.05)
+                            if (voxel.GetWeightInt() > 0 && voxel.GetSDF() < 0.0)
                             {
-                                voxel.Integrate(1.0e-5, 5.0f);
+                                voxel.Reset();
                                 updated = true;
                             }
                         }
 
 
                     }
+                    );
 
                     return updated;
             }

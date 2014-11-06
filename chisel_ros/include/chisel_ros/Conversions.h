@@ -47,19 +47,54 @@ namespace chisel_ros
             }
     }
 
+
     template <class DataType> void ROSImgToColorImg(sensor_msgs::ImageConstPtr image, chisel::ColorImage<DataType>* colorImage)
     {
-            size_t dataSize =image->step / image->width;
-            assert(colorImage->GetHeight() == static_cast<int>(image->height) && colorImage->GetWidth() == static_cast<int>(image->width));
-            assert(dataSize == 3 * sizeof(DataType));
-            const DataType* imageData = reinterpret_cast<const DataType*>(image->data.data());
-            DataType* colorImageData = colorImage->GetMutableData();
-            int totalPixels = image->width * image->height * 3;
-            for (int i = 0; i < totalPixels; i++)
-            {
-                colorImageData[i] =  imageData[i];
-            }
+        size_t numChannels = colorImage->GetNumChannels();
+        size_t dataSize =image->step / image->width;
+        assert(colorImage->GetHeight() == static_cast<int>(image->height) && colorImage->GetWidth() == static_cast<int>(image->width));
+
+        if (dataSize != numChannels * sizeof(DataType))
+        {
+            ROS_ERROR("Inconsistent channel width: %lu. Expected %lu\n", dataSize, numChannels * sizeof(DataType));
+            return;
+        }
+
+        const DataType* imageData = reinterpret_cast<const DataType*>(image->data.data());
+        DataType* colorImageData = colorImage->GetMutableData();
+        int totalPixels = image->width * image->height * numChannels;
+        for (int i = 0; i < totalPixels; i++)
+        {
+            colorImageData[i] =  imageData[i];
+        }
     }
+
+    template <class DataType> chisel::ColorImage<DataType>* ROSImgToColorImg(sensor_msgs::ImageConstPtr image)
+    {
+        size_t numChannels = 0;
+
+        if (image->encoding == "mono8")
+        {
+            numChannels = 1;
+        }
+        else if(image->encoding == "bgr8")
+        {
+            numChannels = 3;
+        }
+        else if(image->encoding == "bgra8")
+        {
+            numChannels = 4;
+        }
+        else
+        {
+            ROS_ERROR("Unsupported color image format %s. Supported formats are mono8, bgr8, and bgra8\n", image->encoding.c_str());
+        }
+
+        chisel::ColorImage<DataType>* toReturn = new chisel::ColorImage<DataType>(image->width, image->height, numChannels);
+        ROSImgToColorImg(image, toReturn);
+        return toReturn;
+    }
+
 
     inline chisel::Transform RosTfToChiselTf(const tf::StampedTransform& tf)
     {

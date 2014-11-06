@@ -27,16 +27,24 @@
 namespace chisel
 {
 
-    template <class DataType = uint8_t, size_t numChannels = 3> class ColorImage
+    template <class DataType = uint8_t> struct Color
+    {
+            DataType red;
+            DataType green;
+            DataType blue;
+            DataType alpha;
+    };
+
+    template <class DataType = uint8_t> class ColorImage
     {
         public:
             ColorImage() :
-                data(nullptr), width(-1), height(-1)
+                data(nullptr), width(-1), height(-1), numChannels(0)
             {
 
             }
-            ColorImage(int w, int h) :
-                data(nullptr), width(w), height(h)
+            ColorImage(int w, int h, size_t channels) :
+                data(nullptr), width(w), height(h), numChannels(channels)
             {
                 data = new DataType[width * height * numChannels];
             }
@@ -55,12 +63,40 @@ namespace chisel
                 return (col + row * width) * numChannels + channel;
             }
 
-            inline void At(int row, int col, DataType* colorOut) const
+            inline void At(int row, int col, Color<DataType>* colorOut) const
             {
                 const int index = Index(row, col, 0);
-                for (int i = 0; i < numChannels; i++)
+
+                switch (numChannels)
                 {
-                    colorOut[i] = data[index + i];
+                    // Mono
+                    case 1:
+                        colorOut->red = data[index];
+                        colorOut->green = colorOut->red;
+                        colorOut->blue = colorOut->red;
+                        colorOut->alpha = colorOut->red;
+                        break;
+                    // Two Channel
+                    case 2:
+                        colorOut->red = data[index];
+                        colorOut->green = data[index + 1];
+                        colorOut->blue = colorOut->green;
+                        colorOut->alpha = colorOut->green;
+                        break;
+                    // BGR
+                    case 3:
+                        colorOut->red = data[index + 2];
+                        colorOut->green = data[index + 1];
+                        colorOut->blue = data[index];
+                        colorOut->alpha = colorOut->red;
+                        break;
+                   // BGRA
+                    case 4:
+                        colorOut->red = data[index + 2];
+                        colorOut->green = data[index + 1];
+                        colorOut->blue = data[index];
+                        colorOut->alpha = data[index + 3];
+                        break;
                 }
             }
 
@@ -88,10 +124,13 @@ namespace chisel
             inline void SetWidth(int w) { width = w; }
             inline void SetHeight(int h) { height = h; }
 
+            inline size_t GetNumChannels() const { return numChannels; }
+
         protected:
             DataType* data;
             int width;
             int height;
+            size_t numChannels;
     };
 
 } // namespace chisel

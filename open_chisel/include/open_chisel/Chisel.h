@@ -54,8 +54,8 @@ namespace chisel
 
                     std::mutex mutex;
                     ChunkIDList garbageChunks;
-                    for(const ChunkID& chunkID : chunksIntersecting)
-                    //parallel_for(chunksIntersecting.begin(), chunksIntersecting.end(), [&](const ChunkID& chunkID)
+                    //for(const ChunkID& chunkID : chunksIntersecting)
+                    parallel_for(chunksIntersecting.begin(), chunksIntersecting.end(), [&](const ChunkID& chunkID)
                     {
                         bool chunkNew = false;
 
@@ -91,7 +91,7 @@ namespace chisel
                         }
                         mutex.unlock();
                     }
-                   // );
+                    );
 
                     GarbageCollect(garbageChunks);
                     chunkManager.PrintMemoryStatistics();
@@ -108,8 +108,8 @@ namespace chisel
 
                     std::mutex mutex;
                     ChunkIDList garbageChunks;
-                    for ( const ChunkID& chunkID : chunksIntersecting)
-                    //parallel_for(chunksIntersecting.begin(), chunksIntersecting.end(), [&](const ChunkID& chunkID)
+                    //for ( const ChunkID& chunkID : chunksIntersecting)
+                    parallel_for(chunksIntersecting.begin(), chunksIntersecting.end(), [&](const ChunkID& chunkID)
                     {
 
                         mutex.lock();
@@ -146,7 +146,7 @@ namespace chisel
                         }
                         mutex.unlock();
                     }
-                    //);
+                    );
 
                     GarbageCollect(garbageChunks);
             }

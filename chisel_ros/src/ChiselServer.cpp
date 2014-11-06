@@ -206,8 +206,8 @@ namespace chisel_ros
         depthCamera.imageTopic = imageTopic;
         depthCamera.transform = transform;
         depthCamera.infoTopic = infoTopic;
-        depthCamera.imageSubscriber = nh.subscribe(depthCamera.imageTopic, 1, &ChiselServer::DepthImageCallback, this);
-        depthCamera.infoSubscriber = nh.subscribe(depthCamera.infoTopic, 1, &ChiselServer::DepthCameraInfoCallback, this);
+        depthCamera.imageSubscriber = nh.subscribe(depthCamera.imageTopic, 20, &ChiselServer::DepthImageCallback, this);
+        depthCamera.infoSubscriber = nh.subscribe(depthCamera.infoTopic, 20, &ChiselServer::DepthCameraInfoCallback, this);
     }
 
 
@@ -262,8 +262,8 @@ namespace chisel_ros
         colorCamera.imageTopic = imageTopic;
         colorCamera.transform = transform;
         colorCamera.infoTopic = infoTopic;
-        colorCamera.imageSubscriber = nh.subscribe(colorCamera.imageTopic, 1, &ChiselServer::ColorImageCallback, this);
-        colorCamera.infoSubscriber = nh.subscribe(colorCamera.infoTopic, 1, &ChiselServer::ColorCameraInfoCallback, this);
+        colorCamera.imageSubscriber = nh.subscribe(colorCamera.imageTopic, 20, &ChiselServer::ColorImageCallback, this);
+        colorCamera.infoSubscriber = nh.subscribe(colorCamera.infoTopic, 20, &ChiselServer::ColorCameraInfoCallback, this);
     }
 
     void ChiselServer::ColorCameraInfoCallback(sensor_msgs::CameraInfoConstPtr cameraInfo)
@@ -278,10 +278,12 @@ namespace chisel_ros
     {
         if (!lastColorImage.get())
         {
-            lastColorImage.reset(new chisel::ColorImage<ColorData>(colorImage->width, colorImage->height));
+            lastColorImage.reset(ROSImgToColorImg<ColorData>(colorImage));
         }
-
-        ROSImgToColorImg(colorImage, lastColorImage.get());
+        else
+        {
+            ROSImgToColorImg(colorImage, lastColorImage.get());
+        }
 
         bool gotTransform = false;
         tf::StampedTransform tf;
