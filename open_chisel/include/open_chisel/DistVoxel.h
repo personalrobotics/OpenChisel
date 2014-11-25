@@ -49,8 +49,8 @@ namespace chisel
                 sdf = FloatToFixedFloat16(distance);
             }
 
-            inline FixedFloat16 GetWeightInt() const { return weight; }
-            inline void SetWeightInt(const FixedFloat16& w) { weight = w; }
+            inline UFixedFloat16 GetWeightInt() const { return weight; }
+            inline void SetWeightInt(const UFixedFloat16& w) { weight = w; }
 
             inline float GetWeight() const { return UFixedFloat16ToFloat(weight); }
             inline void SetWeight(const float& w) { weight = FloatToUFixedFloat16(w); }
@@ -62,12 +62,23 @@ namespace chisel
                 float newDist = (oldWeight * oldSDF + weightUpdate * distUpdate) / (weightUpdate + oldWeight);
                 SetSDF(newDist);
                 SetWeight(oldWeight + weightUpdate);
+
+            }
+
+            inline void Carve()
+            {
+                float oldWeight = GetWeight();
+                float oldSDF = GetSDF();
+                float newWeight = fmax(oldWeight - 0.1f, 0);
+                float newSDF = fmin(oldSDF + 0.1f, 0);
+                SetSDF(newSDF);
+                SetWeight(newWeight);
             }
 
             inline void Reset()
             {
                 sdf = FloatToFixedFloat16(0);
-                weight = 0;
+                weight = FloatToUFixedFloat16(0);
             }
 
         protected:

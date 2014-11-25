@@ -149,6 +149,7 @@ namespace chisel
                     );
 
                     GarbageCollect(garbageChunks);
+                    chunkManager.PrintMemoryStatistics();
             }
 
             void GarbageCollect(const ChunkIDList& chunks);

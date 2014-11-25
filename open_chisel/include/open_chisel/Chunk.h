@@ -36,6 +36,14 @@ namespace chisel
     typedef Eigen::Vector3i ChunkID;
     typedef int VoxelID;
 
+    struct ChunkStatistics
+    {
+            size_t numKnownInside;
+            size_t numKnownOutside;
+            size_t numUnknown;
+            float totalWeight;
+    };
+
     class Chunk
     {
         public:
@@ -103,6 +111,8 @@ namespace chisel
             {
                     return colors;
             }
+
+            void ComputeStatistics(ChunkStatistics* stats);
 
             AABB ComputeBoundingBox();
 

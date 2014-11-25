@@ -495,6 +495,11 @@ namespace chisel
         totalBounds.min = chisel::Vec3(bigFloat, bigFloat, bigFloat);
         totalBounds.max = chisel::Vec3(-bigFloat, -bigFloat, -bigFloat);
 
+        ChunkStatistics stats;
+        stats.numKnownInside = 0;
+        stats.numKnownOutside = 0;
+        stats.numUnknown = 0;
+        stats.totalWeight = 0.0f;
         for (const std::pair<ChunkID, ChunkPtr>& chunk : chunks)
         {
             AABB bounds = chunk.second->ComputeBoundingBox();
@@ -503,6 +508,8 @@ namespace chisel
                 totalBounds.min(i) = std::min(totalBounds.min(i), bounds.min(i));
                 totalBounds.max(i) = std::max(totalBounds.max(i), bounds.max(i));
             }
+
+            chunk.second->ComputeStatistics(&stats);
         }
 
 
@@ -515,6 +522,8 @@ namespace chisel
         size_t currentNum = chunks.size() * (chunkSize(0) * chunkSize(1) * chunkSize(2));
         float currentMemory = currentNum * sizeof(DistVoxel) / 1000000.0f;
 
+        printf("Num Unknown: %lu, Num KnownIn: %lu, Num KnownOut: %lu Weight: %f\n", stats.numUnknown, stats.numKnownInside, stats.numKnownOutside, stats.totalWeight);
+        printf("Bounds: %f %f %f %f %f %f\n", totalBounds.min.x(), totalBounds.min.y(), totalBounds.min.z(), totalBounds.max.x(), totalBounds.max.y(), totalBounds.max.z());
         printf("Theoretical max (MB): %f, Current (MB): %f\n", maxMemory, currentMemory);
 
     }

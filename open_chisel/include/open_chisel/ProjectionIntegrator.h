@@ -154,9 +154,9 @@ namespace chisel
                         else if (enableVoxelCarving && surfaceDist > truncation + carvingDist)
                         {
                             DistVoxel& voxel = chunk->GetDistVoxelMutable(i);
-                            if (voxel.GetWeightInt() > 0 && voxel.GetSDF() < 0.0)
+                            if (voxel.GetWeightInt() > 0 && voxel.GetSDF() < -resolution)
                             {
-                                voxel.Reset();
+                                voxel.Carve();
                                 updated = true;
                             }
                         }

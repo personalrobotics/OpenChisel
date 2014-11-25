@@ -77,6 +77,36 @@ namespace chisel
                           std::max(std::min(static_cast<int>(chunkPos(2)), numVoxels(2)), 0));
     }
 
+
+    void Chunk::ComputeStatistics(ChunkStatistics* stats)
+    {
+        assert(stats != nullptr);
+
+        for (const DistVoxel& vox : voxels)
+        {
+            float weight = vox.GetWeight();
+            if (vox.GetWeightInt() > 0)
+            {
+                float sdf = vox.GetSDF();
+                if (sdf < 0)
+                {
+                    stats->numKnownInside++;
+                }
+                else
+                {
+                    stats->numKnownOutside++;
+                }
+            }
+            else
+            {
+                stats->numUnknown++;
+            }
+
+            stats->totalWeight += weight;
+
+        }
+    }
+
     Vec3 Chunk::GetColorAt(const Vec3& pos)
     {
         if(ComputeBoundingBox().Contains(pos))
