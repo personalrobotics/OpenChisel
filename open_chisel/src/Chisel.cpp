@@ -100,4 +100,53 @@ namespace chisel
         return success;
     }
 
+    void Chisel::IntegratePointCloud(const ProjectionIntegrator& integrator, const PointCloud& cloud, const Transform& extrinsic, float truncation, float maxDist)
+    {
+        ChunkIDList chunksIntersecting;
+        chunkManager.GetChunkIDsIntersecting(cloud, extrinsic, truncation, maxDist, &chunksIntersecting);
+        printf("There are %lu chunks intersecting\n", chunksIntersecting.size());
+        std::mutex mutex;
+        ChunkIDList garbageChunks;
+        //for(const ChunkID& chunkID : chunksIntersecting)
+        parallel_for(chunksIntersecting.begin(), chunksIntersecting.end(), [&](const ChunkID& chunkID)
+        {
+            bool chunkNew = false;
+
+            mutex.lock();
+            if (!chunkManager.HasChunk(chunkID))
+            {
+                chunkNew = true;
+                chunkManager.CreateChunk(chunkID);
+            }
+
+            ChunkPtr chunk = chunkManager.GetChunk(chunkID);
+            mutex.unlock();
+
+            bool needsUpdate = integrator.Integrate(cloud, extrinsic, chunk.get());
+
+            mutex.lock();
+            if (needsUpdate)
+            {
+                for (int dx = -1; dx <= 1; dx++)
+                {
+                    for (int dy = -1; dy <= 1; dy++)
+                    {
+                        for (int dz = -1; dz <= 1; dz++)
+                        {
+                            meshesToUpdate[chunkID + ChunkID(dx, dy, dz)] = true;
+                        }
+                    }
+                }
+            }
+            else if(chunkNew)
+            {
+                garbageChunks.push_back(chunkID);
+            }
+            mutex.unlock();
+        });
+        GarbageCollect(garbageChunks);
+        chunkManager.PrintMemoryStatistics();
+    }
+
+
 } // namespace chisel 

@@ -25,7 +25,8 @@ add_library(${PROJECT_NAME}
 	src/Chisel.cpp
 	src/mesh/Mesh.cpp
 	src/marching_cubes/MarchingCubes.cpp
-	src/io/PLY.cpp)
+	src/io/PLY.cpp
+	src/geometry/Raycast.cpp)
 
 target_link_libraries(${PROJECT_NAME} ${CATKIN_LIBRARIES})
 

@@ -29,6 +29,7 @@
 #include <open_chisel/camera/PinholeCamera.h>
 #include <open_chisel/camera/DepthImage.h>
 #include <open_chisel/geometry/Frustum.h>
+#include <open_chisel/pointcloud/PointCloud.h>
 
 namespace chisel
 {
@@ -43,6 +44,8 @@ namespace chisel
             inline const ChunkManager& GetChunkManager() const { return chunkManager; }
             inline ChunkManager& GetMutableChunkManager() { return chunkManager; }
             inline void SetChunkManager(const ChunkManager& manager) { chunkManager = manager; }
+
+            void IntegratePointCloud(const ProjectionIntegrator& integrator, const PointCloud& cloud, const Transform& extrinsic, float truncation, float maxDist);
 
             template <class DataType> void IntegrateDepthScan(const ProjectionIntegrator& integrator, const std::shared_ptr<const DepthImage<DataType> >& depthImage, const Transform& extrinsic, const PinholeCamera& camera)
             {
@@ -105,7 +108,7 @@ namespace chisel
                     ChunkIDList chunksIntersecting;
                     chunkManager.GetChunkIDsIntersecting(frustum, &chunksIntersecting);
 
-
+                    printf("There are %lu chunks intersecting.\n", chunksIntersecting.size());
                     std::mutex mutex;
                     ChunkIDList garbageChunks;
                     //for ( const ChunkID& chunkID : chunksIntersecting)

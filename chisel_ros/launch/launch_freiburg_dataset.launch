@@ -22,11 +22,13 @@
         <param name="base_transform" value="/world"/>
         <param name="depth_image_transform" value="/openni_depth_optical_frame"/>
         <param name="color_image_transform" value="/openni_rgb_optical_frame"/>
+        <param name="fusion_mode" value="DepthImage"/>
 
         <remap from="/depth_image" to="/camera/depth/image"/>
         <remap from="/depth_camera_info" to="/camera/depth/camera_info"/>
         <remap from="/color_image" to="/camera/rgb/image_color"/>
         <remap from="/color_camera_info" to="/camera/rgb/camera_info"/>
+        <remap from="/camera/depth_registered/points" to="/camera/depth/points"/>
 
     </node>
 </launch>

@@ -23,6 +23,9 @@
 #ifndef CONVERSIONS_H_
 #define CONVERSIONS_H_
 
+#include <pcl/common/common.h>
+#include <pcl/point_types.h>
+#include <pcl_ros/point_cloud.h>
 #include <Eigen/Geometry>
 #include <open_chisel/geometry/Geometry.h>
 #include <open_chisel/camera/DepthImage.h>
@@ -30,9 +33,47 @@
 #include <sensor_msgs/CameraInfo.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/Transform.h>
+#include <sensor_msgs/PointCloud2.h>
+#include <open_chisel/pointcloud/PointCloud.h>
+#include <pcl/filters/filter.h>
 
 namespace chisel_ros
 {
+    void PclPointCloudToChisel(const pcl::PointCloud<pcl::PointXYZRGB>& cloudIn, chisel::PointCloud* cloudOut)
+    {
+        assert(!!cloudOut);
+        cloudOut->GetMutablePoints().resize(cloudIn.points.size());
+        cloudOut->GetMutableColors().resize(cloudIn.points.size());
+
+        size_t i = 0;
+        float byteToFloat = 1.0f / 255.0f;
+        for (const pcl::PointXYZRGB& pt : cloudIn.points)
+        {
+            chisel::Vec3& xyz =  cloudOut->GetMutablePoints().at(i);
+            xyz(0) = pt.x;
+            xyz(1) = pt.y;
+            xyz(2) = pt.z;
+
+            chisel::Vec3& rgb = cloudOut->GetMutableColors().at(i);
+            rgb(0) = pt.r * byteToFloat;
+            rgb(1) = pt.g * byteToFloat;
+            rgb(2) = pt.b * byteToFloat;
+            i++;
+        }
+    }
+
+    void ROSPointCloudToChisel(sensor_msgs::PointCloud2ConstPtr cloudIn, chisel::PointCloud* cloudOut)
+    {
+        assert(!!cloudOut);
+        pcl::PointCloud<pcl::PointXYZRGB> pclCloud;
+        pcl::fromROSMsg(*cloudIn, pclCloud);
+        //remove NAN points from the cloud
+        std::vector<int> indices;
+        pcl::removeNaNFromPointCloud(pclCloud, pclCloud, indices);
+        PclPointCloudToChisel(pclCloud, cloudOut);
+    }
+
+
     template <class DataType> void ROSImgToDepthImg(sensor_msgs::ImageConstPtr image, chisel::DepthImage<DataType>* depthImage)
     {
             size_t dataSize =image->step / image->width;

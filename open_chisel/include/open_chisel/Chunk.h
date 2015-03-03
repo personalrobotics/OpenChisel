@@ -71,6 +71,13 @@ namespace chisel
             inline const ColorVoxel& GetColorVoxel(const VoxelID& voxelID) const { return colors.at(voxelID); }
             inline ColorVoxel& GetColorVoxelMutable(const VoxelID& voxelID) { return colors.at(voxelID); }
 
+            Point3 GetVoxelCoords(const Vec3& worldCoords) const;
+
+            inline VoxelID GetVoxelID(const Point3& coords) const
+            {
+                return GetVoxelID(coords.x(), coords.y(), coords.z());
+            }
+
             inline VoxelID GetVoxelID(int x, int y, int z) const
             {
                 return (z * numVoxels(2) + y) * numVoxels(0) + x;
@@ -120,7 +127,7 @@ namespace chisel
 
             Vec3 GetColorAt(const Vec3& pos);
 
-            VoxelID GetVoxelID(const Vec3& worldPos);
+            VoxelID GetVoxelID(const Vec3& worldPos) const;
 
         protected:
             ChunkID ID;

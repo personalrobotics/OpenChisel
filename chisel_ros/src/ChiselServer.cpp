@@ -30,7 +30,7 @@ namespace chisel_ros
 {
 
     ChiselServer::ChiselServer() :
-            useColor(false), hasNewData(false), nearPlaneDist(0.05), farPlaneDist(5)
+            useColor(false), hasNewData(false), nearPlaneDist(0.05), farPlaneDist(5), isPaused(false), mode(FusionMode::DepthImage)
     {
 
     }
@@ -183,8 +183,8 @@ namespace chisel_ros
     }
 
 
-    ChiselServer::ChiselServer(const ros::NodeHandle& nodeHanlde, int chunkSizeX, int chunkSizeY, int chunkSizeZ, float resolution, bool color) :
-            nh(nodeHanlde), useColor(color), hasNewData(false)
+    ChiselServer::ChiselServer(const ros::NodeHandle& nodeHanlde, int chunkSizeX, int chunkSizeY, int chunkSizeZ, float resolution, bool color, FusionMode fusionMode) :
+            nh(nodeHanlde), useColor(color), hasNewData(false), isPaused(false), mode(fusionMode)
     {
         chiselMap.reset(new chisel::Chisel(Eigen::Vector3i(chunkSizeX, chunkSizeY, chunkSizeZ), resolution, color));
     }
@@ -221,6 +221,7 @@ namespace chisel_ros
 
     void ChiselServer::DepthImageCallback(sensor_msgs::ImageConstPtr depthImage)
     {
+        printf("Depth callback.\n");
         if (!lastDepthImage.get())
         {
             lastDepthImage.reset(new chisel::DepthImage<DepthData>(depthImage->width, depthImage->height));
@@ -312,6 +313,50 @@ namespace chisel_ros
         colorCamera.lastImageTimestamp = colorImage->header.stamp;
     }
 
+    void ChiselServer::SubscribePointCloud(const std::string& topic)
+    {
+        pointcloudTopic.cloudTopic = topic;
+        pointcloudTopic.gotCloud = false;
+        pointcloudTopic.gotPose = false;
+        pointcloudTopic.cloudSubscriber = nh.subscribe(pointcloudTopic.cloudTopic, 20, &ChiselServer::PointCloudCallback, this);
+    }
+
+    void ChiselServer::PointCloudCallback(sensor_msgs::PointCloud2ConstPtr pointcloud)
+    {
+        if (!lastPointCloud.get())
+        {
+            lastPointCloud.reset(new chisel::PointCloud());
+        }
+        ROSPointCloudToChisel(pointcloud, lastPointCloud.get());
+        pointcloudTopic.transform = pointcloud->header.frame_id;
+        bool gotTransform = false;
+        tf::StampedTransform tf;
+
+        int tries = 0;
+        int maxTries = 10;
+
+        while(!gotTransform && tries < maxTries)
+        {
+            tries++;
+            try
+            {
+                transformListener.waitForTransform(pointcloudTopic.transform, baseTransform, pointcloud->header.stamp, ros::Duration(0.5));
+                transformListener.lookupTransform(pointcloudTopic.transform, baseTransform, pointcloud->header.stamp, tf);
+                pointcloudTopic.gotPose = true;
+                gotTransform = true;
+            }
+            catch (std::exception& e)
+            {
+                ros::Rate lookupRate(0.5f);
+                ROS_WARN("%s\n", e.what());
+            }
+        }
+
+        pointcloudTopic.lastPose = RosTfToChiselTf(tf);
+        pointcloudTopic.lastTimestamp = pointcloud->header.stamp;
+        hasNewData = true;
+    }
+
     void ChiselServer::SetupProjectionIntegrator(const chisel::Vec4& truncation, uint16_t weight, bool useCarving, float carvingDist)
     {
         projectionIntegrator.SetCentroids(GetChiselMap()->GetChunkManager().GetCentroids());
@@ -338,6 +383,19 @@ namespace chisel_ros
             hasNewData = false;
         }
     }
+
+    void ChiselServer::IntegrateLastPointCloud()
+    {
+        if (!IsPaused()  && pointcloudTopic.gotPose && lastPointCloud.get())
+        {
+            ROS_INFO("Integrating point cloud");
+            chiselMap->IntegratePointCloud(projectionIntegrator, *lastPointCloud, pointcloudTopic.lastPose, 0.1f, farPlaneDist);
+            PublishLatestChunkBoxes();
+            chiselMap->UpdateMeshes();
+            hasNewData = false;
+        }
+    }
+
 
     void ChiselServer::PublishLatestChunkBoxes()
     {

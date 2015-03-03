@@ -69,12 +69,20 @@ namespace chisel
         return AABB(pos, pos + size);
     }
 
-    VoxelID Chunk::GetVoxelID(const Vec3& worldPos)
+    Point3 Chunk::GetVoxelCoords(const Vec3& worldCoords) const
     {
-        Vec3 chunkPos = (worldPos - origin) / voxelResolutionMeters;
-        return GetVoxelID(std::max(std::min(static_cast<int>(chunkPos(0)), numVoxels(0)), 0),
-                          std::max(std::min(static_cast<int>(chunkPos(1)), numVoxels(1)), 0),
-                          std::max(std::min(static_cast<int>(chunkPos(2)), numVoxels(2)), 0));
+        static const float roundingFactorX = 1.0f / (numVoxels(0) * voxelResolutionMeters);
+        static const float roundingFactorY = 1.0f / (numVoxels(1) * voxelResolutionMeters);
+        static const float roundingFactorZ = 1.0f / (numVoxels(2) * voxelResolutionMeters);
+
+        return Point3( static_cast<int>(std::floor(worldCoords(0) * roundingFactorX)),
+                       static_cast<int>(std::floor(worldCoords(1) * roundingFactorY)),
+                       static_cast<int>(std::floor(worldCoords(2) * roundingFactorZ)));
+    }
+
+    VoxelID Chunk::GetVoxelID(const Vec3& worldPos) const
+    {
+        return GetVoxelID(GetVoxelCoords(worldPos));
     }
 
 

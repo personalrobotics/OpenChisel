@@ -33,8 +33,10 @@
 #include <open_chisel/camera/PinholeCamera.h>
 #include <open_chisel/camera/DepthImage.h>
 #include <open_chisel/camera/ColorImage.h>
+#include <open_chisel/pointcloud/PointCloud.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
+#include <sensor_msgs/PointCloud2.h>
 #include <visualization_msgs/Marker.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
@@ -48,6 +50,12 @@ namespace chisel_ros
     class ChiselServer
     {
         public:
+            enum class FusionMode
+            {
+                DepthImage,
+                PointCloud
+            };
+
             struct RosCameraTopic
             {
                 std::string imageTopic;
@@ -65,8 +73,19 @@ namespace chisel_ros
                 bool gotImage;
             };
 
+            struct RosPointCloudTopic
+            {
+                std::string cloudTopic;
+                std::string transform;
+                ros::Subscriber cloudSubscriber;
+                chisel::Transform lastPose;
+                ros::Time lastTimestamp;
+                bool gotPose;
+                bool gotCloud;
+            };
+
             ChiselServer();
-            ChiselServer(const ros::NodeHandle& nodeHanlde, int chunkSizeX, int chunkSizeY, int chunkSizeZ, float resolution, bool color);
+            ChiselServer(const ros::NodeHandle& nodeHanlde, int chunkSizeX, int chunkSizeY, int chunkSizeZ, float resolution, bool color, FusionMode fusionMode);
             virtual ~ChiselServer();
 
             inline chisel::ChiselPtr GetChiselMap() { return chiselMap; }
@@ -99,7 +118,11 @@ namespace chisel_ros
             void ColorCameraInfoCallback(sensor_msgs::CameraInfoConstPtr cameraInfo);
             void ColorImageCallback(sensor_msgs::ImageConstPtr colorImage);
 
+            void SubscribePointCloud(const std::string& topic);
+            void PointCloudCallback(sensor_msgs::PointCloud2ConstPtr pointcloud);
+
             void IntegrateLastDepthImage();
+            void IntegrateLastPointCloud();
             void FillMarkerTopicWithMeshes(visualization_msgs::Marker* marker);
             inline void SetBaseTransform(const std::string& frameName) { baseTransform = frameName; }
 
@@ -120,6 +143,9 @@ namespace chisel_ros
 
             void AdvertiseServices();
 
+            inline FusionMode GetMode() { return mode; }
+            inline void SetMode(const FusionMode& m) { mode = m; }
+
         protected:
             visualization_msgs::Marker CreateFrustumMarker(const chisel::Frustum& frustum);
 
@@ -128,6 +154,7 @@ namespace chisel_ros
             tf::TransformListener transformListener;
             std::shared_ptr<chisel::DepthImage<DepthData> > lastDepthImage;
             std::shared_ptr<chisel::ColorImage<ColorData> > lastColorImage;
+            chisel::PointCloudPtr lastPointCloud;
             chisel::ProjectionIntegrator projectionIntegrator;
             std::string baseTransform;
             std::string meshTopic;
@@ -141,11 +168,13 @@ namespace chisel_ros
             ros::ServiceServer getAllChunksServer;
             RosCameraTopic depthCamera;
             RosCameraTopic colorCamera;
+            RosPointCloudTopic pointcloudTopic;
             bool useColor;
             bool hasNewData;
             float nearPlaneDist;
             float farPlaneDist;
             bool isPaused;
+            FusionMode mode;
     };
     typedef std::shared_ptr<ChiselServer> ChiselServerPtr;
     typedef std::shared_ptr<const ChiselServer> ChiselServerConstPtr;

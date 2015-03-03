@@ -25,7 +25,8 @@
 #include <open_chisel/geometry/Frustum.h>
 #include <open_chisel/geometry/AABB.h>
 #include <open_chisel/marching_cubes/MarchingCubes.h>
-
+#include <open_chisel/geometry/Raycast.h>
+#include <iostream>
 
 namespace chisel
 {
@@ -183,6 +184,52 @@ namespace chisel
         }
 
         //printf("%lu chunks intersect frustum\n", chunkList->size());
+    }
+
+    void ChunkManager::GetChunkIDsIntersecting(const PointCloud& cloud, const Transform& cameraTransform,  float truncation, float maxDist, ChunkIDList* chunkList)
+    {
+        assert(!!chunkList);
+        chunkList->clear();
+        const float roundX = 1.0f / (chunkSize.x() * voxelResolutionMeters);
+        const float roundY = 1.0f / (chunkSize.y() * voxelResolutionMeters);
+        const float roundZ = 1.0f / (chunkSize.z() * voxelResolutionMeters);
+        ChunkMap map;
+        Point3 minVal(-std::numeric_limits<int>::max(), -std::numeric_limits<int>::max(), -std::numeric_limits<int>::max());
+        Point3 maxVal(std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), std::numeric_limits<int>::max());
+        size_t numPoints = cloud.GetPoints().size();
+        size_t i = 0;
+        for (const Vec3& point : cloud.GetPoints())
+        {
+            Vec3 end = cameraTransform * point;
+            Vec3 start = cameraTransform.translation();
+            float len = (end - start).norm();
+
+            if(len > maxDist)
+            {
+                continue;
+            }
+
+            Vec3 dir = (end - start).normalized();
+            Vec3 truncStart = end - dir * truncation;
+            Vec3 truncEnd = end + dir * truncation;
+            Vec3 startInt = Vec3(truncStart.x() * roundX , truncStart.y() * roundY, truncStart.z() * roundZ);
+            Vec3 endInt = Vec3(truncEnd.x() * roundX, truncEnd.y() * roundY, truncEnd.z() * roundZ);
+
+            Point3List intersectingChunks;
+            Raycast(startInt, endInt, minVal, maxVal, &intersectingChunks);
+
+            for (const Point3& id : intersectingChunks)
+            {
+                if(map.find(id) == map.end())
+                    map[id] = ChunkPtr();
+            }
+        }
+
+        for (const std::pair<ChunkID, ChunkPtr>& it : map)
+        {
+            chunkList->push_back(it.first);
+        }
+
     }
 
     void ChunkManager::ExtractInsideVoxelMesh(const ChunkPtr& chunk, const Eigen::Vector3i& index, const Vec3& coords, VertIndex* nextMeshIndex, Mesh* mesh)
@@ -474,15 +521,7 @@ namespace chisel
         for (size_t i = 0; i < mesh->vertices.size(); i++)
         {
             const Vec3& vertex = mesh->vertices.at(i);
-            const ColorVoxel* voxel = GetColorVoxel(vertex);
-            if(voxel)
-            {
-                mesh->colors[i] = Vec3(voxel->GetRed() / 255.0f, voxel->GetGreen() / 255.0f, voxel->GetBlue() / 255.0f);
-            }
-            else
-            {
-                mesh->colors[i] = Vec3(0, 0, 0);
-            }
+            mesh->colors[i] = InterpolateColor(vertex);
         }
     }
 

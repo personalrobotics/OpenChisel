@@ -22,6 +22,7 @@
 #ifndef PROJECTIONINTEGRATOR_H_
 #define PROJECTIONINTEGRATOR_H_
 
+#include <open_chisel/pointcloud/PointCloud.h>
 #include <open_chisel/geometry/Geometry.h>
 #include <open_chisel/geometry/Frustum.h>
 #include <open_chisel/geometry/AABB.h>
@@ -42,6 +43,10 @@ namespace chisel
             ProjectionIntegrator();
             ProjectionIntegrator(const TruncatorPtr& t, const WeighterPtr& w, float carvingDist, bool enableCarving, const Vec3List& centroids);
             virtual ~ProjectionIntegrator();
+
+            bool Integrate(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk) const;
+            bool IntegratePointCloud(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk) const;
+            bool IntegrateColorPointCloud(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk) const;
 
             template<class DataType> bool Integrate(const std::shared_ptr<const DepthImage<DataType> >& depthImage, const PinholeCamera& camera, const Transform& cameraPose, Chunk* chunk) const
             {
@@ -143,7 +148,6 @@ namespace chisel
                                 int c = static_cast<int>(colorCameraPos(0));
                                 colorImage->At(r, c, &color);
                                 colorVoxel.Integrate(color.red, color.green, color.blue, 1);
-
                             }
 
                             DistVoxel& voxel = chunk->GetDistVoxelMutable(i);

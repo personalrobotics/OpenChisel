@@ -40,18 +40,16 @@ namespace chisel
         //check all corner side of plane
         Vec3 ext = GetExtents();
 
-        Vec3List corners
-        {
-            max,
-            min,
-            min + Vec3(ext(0), 0, 0),
-            min + Vec3(0, ext(1), 0),
-            min + Vec3(0, 0, ext(2)),
-            min + Vec3(ext(0), 0, ext(2)),
-            min + Vec3(ext(0), ext(1), 0),
-            min + Vec3(0, ext(1), ext(2))
-        };
-
+        Vec3List corners;
+        corners.resize(8);
+        corners[0] = max;
+        corners[1] = min;
+        corners[2] = min + Vec3(ext(0), 0, 0);
+        corners[3] = min + Vec3(0, ext(1), 0);
+        corners[4] = min + Vec3(0, 0, ext(2));
+        corners[5] = min + Vec3(ext(0), 0, ext(2));
+        corners[6] = min + Vec3(ext(0), ext(1), 0);
+        corners[7] = min + Vec3(0, ext(1), ext(2));
 
         float lastdistance = plane.normal.dot(corners[0]) + plane.distance;
 

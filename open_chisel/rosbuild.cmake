@@ -34,6 +34,7 @@ rosbuild_add_library(${PROJECT_NAME}
 	src/geometry/AABB.cpp
 	src/geometry/Plane.cpp
 	src/geometry/Frustum.cpp
+	src/geometry/Raycast.cpp
 	src/camera/Intrinsics.cpp
 	src/camera/PinholeCamera.cpp
 	src/pointcloud/PointCloud.cpp

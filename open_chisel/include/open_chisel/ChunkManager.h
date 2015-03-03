@@ -29,6 +29,8 @@
 #include <open_chisel/mesh/Mesh.h>
 #include <open_chisel/ColorVoxel.h>
 #include <open_chisel/DistVoxel.h>
+#include <open_chisel/pointcloud/PointCloud.h>
+
 #include "Chunk.h"
 
 namespace chisel
@@ -125,6 +127,7 @@ namespace chisel
 
             void GetChunkIDsIntersecting(const AABB& box, ChunkIDList* chunkList);
             void GetChunkIDsIntersecting(const Frustum& frustum, ChunkIDList* chunkList);
+            void GetChunkIDsIntersecting(const PointCloud& cloud, const Transform& cameraTransform, float truncation, float maxDist, ChunkIDList* chunkList);
             void CreateChunk(const ChunkID& id);
 
             void GenerateMesh(const ChunkPtr& chunk, Mesh* mesh);

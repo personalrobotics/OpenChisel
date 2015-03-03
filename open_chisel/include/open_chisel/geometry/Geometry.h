@@ -26,9 +26,12 @@
 #include <vector>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <Eigen/StdVector>
 
 namespace chisel
 {
+    typedef Eigen::Vector2i Point2;
+    typedef Eigen::Vector3i Point3;
     typedef Eigen::Vector2f Vec2;
     typedef Eigen::Vector3f Vec3;
     typedef Eigen::Vector4f Vec4;
@@ -37,6 +40,8 @@ namespace chisel
     typedef Eigen::Affine3f Transform;
     typedef Eigen::Quaternionf Quaternion;
 
+    typedef std::vector<Point2, Eigen::aligned_allocator<Point2> > Point2List;
+    typedef std::vector<Point3, Eigen::aligned_allocator<Point3> > Point3List;
     typedef std::vector<Vec2, Eigen::aligned_allocator<Vec2> > Vec2List;
     typedef std::vector<Vec3, Eigen::aligned_allocator<Vec3> > Vec3List;
     typedef std::vector<Vec4, Eigen::aligned_allocator<Vec4> > Vec4List;
