@@ -1,0 +1,33 @@
+<package>
+  <name>chisel_ros</name>
+  <version> 0.0.0 </version>
+  <description>
+
+     chisel_ros connects open_chisel with ROS through the TF library, and image_transport
+
+  </description>
+  <maintainer email="mklingen@andrew.cmu.edu"/>
+  <author>Matt Klingensmith</author>
+  <license>MIT</license>
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>pcl</build_depend>
+  <build_depend>pcl_ros</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>open_chisel</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>open_chisel</build_depend>
+  <build_depend>message_generation</build_depend>
+  <build_depend>visualization_msgs</build_depend>
+  <build_depend>pcl_ros</build_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>message_runtime</run_depend>
+  <run_depend>open_chisel</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>pcl_ros</run_depend>
+</package>
+
+

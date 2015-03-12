@@ -1,0 +1,16 @@
+<package>
+  <name> open_chisel </name>
+  <version> 0.0.0 </version>
+  <description>
+
+     open_chisel implements the Chisel chunked TSDF library.
+
+  </description>
+  <maintainer email="mklingen@andrew.cmu.edu"/>
+  <author>Matt Klingensmith</author>
+  <license>MIT</license>
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>eigen</build_depend>
+</package>
+
+
