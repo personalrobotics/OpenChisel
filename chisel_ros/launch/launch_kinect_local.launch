@@ -1,6 +1,6 @@
 <launch>
     <machine name="local" address="localhost" default="true"/>
-    <node name="Chisel" pkg="chisel_ros" type="ChiselNode" output="screen"> 
+    <node name="Chisel" pkg="chisel_ros" type="ChiselNode" output="screen" launch-prefix="gdb --args"> 
         <param name="chunk_size_x" value="16"/>
         <param name="chunk_size_y" value="16"/>
         <param name="chunk_size_z" value="16"/>
@@ -11,10 +11,10 @@
         <param name="carving_dist_m" value="0.1"/>
         <param name="voxel_resolution_m" value="0.01"/>
         <param name="far_plane_dist" value="2.0"/>
-        <param name="base_transform" value="/camera_link"/>
+        <param name="base_transform" value="/base_link"/>
         <param name="depth_image_transform" value="/camera_depth_optical_frame"/>
         <param name="color_image_transform" value="/camera_rgb_optical_frame"/>
-        <param name="fusion_mode" value="PointCloud"/>
+        <param name="fusion_mode" value="DepthImage"/>
     
         <remap from="/depth_image" to="/camera/depth/image"/>
         <remap from="/depth_camera_info" to="/camera/depth/camera_info"/>

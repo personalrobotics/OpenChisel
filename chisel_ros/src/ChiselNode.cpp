@@ -24,7 +24,7 @@
 
 int main(int argc, char** argv)
 {
-    ROS_INFO("Starting up.");
+    ROS_INFO("Starting up chisel node.");
     ros::init(argc, argv, "Chisel");
     ros::NodeHandle nh("~");
     int chunkSizeX, chunkSizeY, chunkSizeZ;
@@ -80,10 +80,12 @@ int main(int argc, char** argv)
 
     if(modeString == "DepthImage")
     {
+        ROS_INFO("Mode depth image");
         mode = chisel_ros::ChiselServer::FusionMode::DepthImage;
     }
     else if(modeString == "PointCloud")
     {
+        ROS_INFO("Mode point cloud");
         mode = chisel_ros::ChiselServer::FusionMode::PointCloud;
     }
     else
