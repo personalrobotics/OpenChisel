@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 
 find_package(catkin REQUIRED COMPONENTS roscpp std_msgs sensor_msgs geometry_msgs tf open_chisel message_generation pcl_ros)
+
 find_package(cmake_modules REQUIRED)
 find_package(Eigen REQUIRED)
 include_directories(${Eigen_INCLUDE_DIRS})
@@ -21,7 +22,8 @@ add_service_files(FILES
 generate_messages(DEPENDENCIES std_msgs sensor_msgs geometry_msgs)
 
 catkin_package(CATKIN_DEPENDS roscpp tf message_runtime std_msgs sensor_msgs open_chisel pcl_ros
-	 	INCLUDE_DIRS include)
+	 	INCLUDE_DIRS include
+               	LIBRARIES ${PROJECT_NAME})
 
 
 include_directories(include ${catkin_INCLUDE_DIRS})

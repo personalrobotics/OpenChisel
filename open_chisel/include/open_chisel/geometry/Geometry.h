@@ -20,8 +20,8 @@
 // SOFTWARE.
 
 
-#ifndef GEOMETRY_H_
-#define GEOMETRY_H_
+#ifndef CHISEL_GEOMETRY_H_
+#define CHISEL_GEOMETRY_H_
 
 #include <vector>
 #include <Eigen/Core>

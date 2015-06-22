@@ -58,10 +58,12 @@ namespace chisel_ros
 
         for (const chisel::DistVoxel& voxel : voxels)
         {
+            float sdf = voxel.GetSDF();
+            float weight = voxel.GetWeight();
             message->distance_data.push_back
             (
-                    static_cast<int32_t>(voxel.GetSDFInt())
-                  | static_cast<uint32_t>(voxel.GetWeight()) << sizeof(uint16_t)
+                    *(reinterpret_cast<uint32_t*>(&sdf))
+                  | *(reinterpret_cast<uint32_t*>(&weight)) << sizeof(uint32_t)
             );
         }
 

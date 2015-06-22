@@ -90,14 +90,14 @@ namespace chisel
                 const Vec3& centroid = centroids[id] + chunk->GetOrigin();
                 float u = depth - (inversePose * centroid - startCamera).z();
                 float weight = weighter->GetWeight(u, truncation);
-                if (std::abs(u) < truncation)
+                if (fabs(u) < truncation)
                 {
                     distVoxel.Integrate(u, weight);
                     updated = true;
                 }
                 else if (enableVoxelCarving && u > truncation + carvingDist)
                 {
-                    if (distVoxel.GetWeightInt() > 0 && distVoxel.GetSDF() < -0.05)
+                    if (distVoxel.GetWeight() > 0)
                     {
                         distVoxel.Integrate(1.0e-5, 5.0f);
                         updated = true;
@@ -149,7 +149,7 @@ namespace chisel
                 const Vec3& centroid = centroids[id] + chunk->GetOrigin();
                 float u = depth - (inversePose * centroid - startCamera).z();
                 float weight = weighter->GetWeight(u, truncation);
-                if (std::abs(u) < truncation)
+                if (fabs(u) < truncation)
                 {
                     distVoxel.Integrate(u, weight);
                     voxel.Integrate((uint8_t)(color.x() * 255.0f), (uint8_t)(color.y() * 255.0f), (uint8_t)(color.z() * 255.0f), 1);
@@ -157,7 +157,7 @@ namespace chisel
                 }
                 else if (enableVoxelCarving && u > truncation + carvingDist)
                 {
-                    if (distVoxel.GetWeightInt() > 0 && distVoxel.GetSDF() < -0.05)
+                    if (distVoxel.GetWeight() > 0)
                     {
                         distVoxel.Integrate(1.0e-5, 5.0f);
                         updated = true;

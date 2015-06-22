@@ -36,24 +36,18 @@ namespace chisel
             DistVoxel();
             virtual ~DistVoxel();
 
-            inline FixedFloat16 GetSDFInt() const { return sdf; }
-            inline void SetSDFInt(const FixedFloat16& distance) { sdf = distance; }
-
             inline float GetSDF() const
             {
-                return FixedFloat16ToFloat(sdf);
+                return sdf;
             }
 
             inline void SetSDF(const float& distance)
             {
-                sdf = FloatToFixedFloat16(distance);
+                sdf = distance;
             }
 
-            inline UFixedFloat16 GetWeightInt() const { return weight; }
-            inline void SetWeightInt(const UFixedFloat16& w) { weight = w; }
-
-            inline float GetWeight() const { return UFixedFloat16ToFloat(weight); }
-            inline void SetWeight(const float& w) { weight = FloatToUFixedFloat16(w); }
+            inline float GetWeight() const { return weight; }
+            inline void SetWeight(const float& w) { weight = w; }
 
             inline void Integrate(const float& distUpdate, const float& weightUpdate)
             {
@@ -67,23 +61,19 @@ namespace chisel
 
             inline void Carve()
             {
-                float oldWeight = GetWeight();
-                float oldSDF = GetSDF();
-                float newWeight = fmax(oldWeight - 0.1f, 0);
-                float newSDF = fmin(oldSDF + 0.1f, 0);
-                SetSDF(newSDF);
-                SetWeight(newWeight);
+		Reset();
+                //Integrate(0.0, 1.5);
             }
 
             inline void Reset()
             {
-                sdf = FloatToFixedFloat16(0);
-                weight = FloatToUFixedFloat16(0);
+                sdf = 99999;
+                weight = 0;
             }
 
         protected:
-           FixedFloat16 sdf;
-           UFixedFloat16 weight;
+           float sdf;
+           float weight;
     };
 
 } // namespace chisel 

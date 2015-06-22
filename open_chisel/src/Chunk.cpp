@@ -71,9 +71,9 @@ namespace chisel
 
     Point3 Chunk::GetVoxelCoords(const Vec3& worldCoords) const
     {
-        static const float roundingFactorX = 1.0f / (numVoxels(0) * voxelResolutionMeters);
-        static const float roundingFactorY = 1.0f / (numVoxels(1) * voxelResolutionMeters);
-        static const float roundingFactorZ = 1.0f / (numVoxels(2) * voxelResolutionMeters);
+        const float roundingFactorX = 1.0f / (voxelResolutionMeters);
+        const float roundingFactorY = 1.0f / (voxelResolutionMeters);
+        const float roundingFactorZ = 1.0f / (voxelResolutionMeters);
 
         return Point3( static_cast<int>(std::floor(worldCoords(0) * roundingFactorX)),
                        static_cast<int>(std::floor(worldCoords(1) * roundingFactorY)),
@@ -93,7 +93,7 @@ namespace chisel
         for (const DistVoxel& vox : voxels)
         {
             float weight = vox.GetWeight();
-            if (vox.GetWeightInt() > 0)
+            if (weight > 0)
             {
                 float sdf = vox.GetSDF();
                 if (sdf < 0)

@@ -9,18 +9,18 @@
         <param name="use_voxel_carving" value="true"/>
         <param name="use_color" value="false"/>
         <param name="carving_dist_m" value="0.05"/>
-        <param name="voxel_resolution_m" value="0.025"/>
+        <param name="voxel_resolution_m" value="0.02"/>
         <param name="far_plane_dist" value="1.5"/>
-        <param name="base_transform" value="/base_link"/>
-        <param name="depth_image_transform" value="/camera_depth_optical_frame"/>
-        <param name="color_image_transform" value="/camera_rgb_optical_frame"/>
+        <param name="base_transform" value="map"/>
+        <param name="depth_image_transform" value="sim_camera"/>
+        <param name="color_image_transform" value="sim_camera"/>
         <param name="fusion_mode" value="DepthImage"/>
     
-        <remap from="/depth_image" to="/camera/depth/image"/>
-        <remap from="/depth_camera_info" to="/camera/depth/camera_info"/>
-        <remap from="/color_image" to="/camera/ir/image"/>
-        <remap from="/color_camera_info" to="/camera/ir/camera_info"/>
-        <remap from="/camera/depth_registered/points" to="/camera/depth/points"/>
+        <remap from="/depth_image" to="/sim_camera/depth"/>
+        <remap from="/depth_camera_info" to="/sim_camera/camera_info"/>
+        <remap from="/color_image" to="/sim_camera/color"/>
+        <remap from="/color_camera_info" to="/sim_camera/camera_info"/>
+        <remap from="/camera/depth_registered/points" to="/sim_camera/depth/points"/>
 
     </node>
 </launch>

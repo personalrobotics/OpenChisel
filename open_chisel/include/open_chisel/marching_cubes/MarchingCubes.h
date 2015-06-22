@@ -130,12 +130,12 @@ namespace chisel
             static inline Vec3 InterpolateVertex(const Vec3& vertex1, const Vec3& vertex2, const float& sdf1, const float& sdf2)
             {
                 const float minDiff = 1e-6;
-                const float sdfDiff = sdf2 - sdf1;
-                if (std::abs(sdfDiff) < minDiff)
+                const float sdfDiff = sdf1 - sdf2;
+                if (fabs(sdfDiff) < minDiff)
                 {
                     return Vec3(vertex1 + 0.5 * vertex2);
                 }
-                const float t = -sdf1 / sdfDiff;
+                const float t = sdf1 / sdfDiff;
                 return Vec3(vertex1 + t * (vertex2 - vertex1));
             }
     };

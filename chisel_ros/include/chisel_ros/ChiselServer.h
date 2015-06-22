@@ -146,6 +146,13 @@ namespace chisel_ros
             inline FusionMode GetMode() { return mode; }
             inline void SetMode(const FusionMode& m) { mode = m; }
 
+            void SetDepthImage(const sensor_msgs::ImageConstPtr& img);
+            void SetDepthPose(const Eigen::Affine3f& tf);
+            void SetColorImage(const sensor_msgs::ImageConstPtr& img);
+            void SetColorPose(const Eigen::Affine3f& tf);
+            void SetColorCameraInfo(const sensor_msgs::CameraInfoConstPtr& info);
+            void SetDepthCameraInfo(const sensor_msgs::CameraInfoConstPtr& info);
+
         protected:
             visualization_msgs::Marker CreateFrustumMarker(const chisel::Frustum& frustum);
 

@@ -49,6 +49,7 @@ namespace chisel
 
             template <class DataType> void IntegrateDepthScan(const ProjectionIntegrator& integrator, const std::shared_ptr<const DepthImage<DataType> >& depthImage, const Transform& extrinsic, const PinholeCamera& camera)
             {
+                    printf("CHISEL: Integrating a scan\n");
                     Frustum frustum;
                     camera.SetupFrustum(extrinsic, &frustum);
 
@@ -57,8 +58,8 @@ namespace chisel
 
                     std::mutex mutex;
                     ChunkIDList garbageChunks;
-                    //for(const ChunkID& chunkID : chunksIntersecting)
-                    parallel_for(chunksIntersecting.begin(), chunksIntersecting.end(), [&](const ChunkID& chunkID)
+                    for(const ChunkID& chunkID : chunksIntersecting)
+                    //parallel_for(chunksIntersecting.begin(), chunksIntersecting.end(), [&](const ChunkID& chunkID)
                     {
                         bool chunkNew = false;
 
@@ -94,10 +95,10 @@ namespace chisel
                         }
                         mutex.unlock();
                     }
-                    );
-
+                    //);
+                    printf("CHISEL: Done with scan\n");
                     GarbageCollect(garbageChunks);
-                    chunkManager.PrintMemoryStatistics();
+                    //chunkManager.PrintMemoryStatistics();
             }
 
             template <class DataType, class ColorType> void IntegrateDepthScanColor(const ProjectionIntegrator& integrator, const std::shared_ptr<const DepthImage<DataType> >& depthImage,  const Transform& depthExtrinsic, const PinholeCamera& depthCamera, const std::shared_ptr<const ColorImage<ColorType> >& colorImage, const Transform& colorExtrinsic, const PinholeCamera& colorCamera)
@@ -108,7 +109,6 @@ namespace chisel
                     ChunkIDList chunksIntersecting;
                     chunkManager.GetChunkIDsIntersecting(frustum, &chunksIntersecting);
 
-                    printf("There are %lu chunks intersecting.\n", chunksIntersecting.size());
                     std::mutex mutex;
                     ChunkIDList garbageChunks;
                     //for ( const ChunkID& chunkID : chunksIntersecting)
@@ -152,7 +152,7 @@ namespace chisel
                     );
 
                     GarbageCollect(garbageChunks);
-                    chunkManager.PrintMemoryStatistics();
+                    //chunkManager.PrintMemoryStatistics();
             }
 
             void GarbageCollect(const ChunkIDList& chunks);

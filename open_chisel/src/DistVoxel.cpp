@@ -25,7 +25,7 @@ namespace chisel
 {
 
     DistVoxel::DistVoxel() :
-            sdf(FloatToFixedFloat16(0)), weight(0)
+            sdf(99999), weight(0)
     {
 
     }

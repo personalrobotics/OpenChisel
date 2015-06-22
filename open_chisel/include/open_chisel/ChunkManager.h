@@ -25,7 +25,7 @@
 #include <memory>
 #include <unordered_map>
 #include <mutex>
-
+#include <open_chisel/geometry/Geometry.h>
 #include <open_chisel/mesh/Mesh.h>
 #include <open_chisel/ColorVoxel.h>
 #include <open_chisel/DistVoxel.h>
@@ -148,6 +148,7 @@ namespace chisel
 
             void RecomptueMesh(const ChunkID& chunkID, std::mutex& mutex);
             void RecomputeMeshes(const ChunkSet& chunks);
+            void ComputeNormalsFromGradients(Mesh* mesh);
 
             inline const Eigen::Vector3i& GetChunkSize() const { return chunkSize; }
             inline float GetResolution() const { return voxelResolutionMeters; }
@@ -157,6 +158,9 @@ namespace chisel
             void PrintMemoryStatistics();
 
             void Reset();
+
+            bool GetSDFAndGradient(const Eigen::Vector3f& pos, double* dist, Eigen::Vector3f* grad);
+            bool GetSDF(const Eigen::Vector3f& pos, double* dist);
 
             EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         protected:

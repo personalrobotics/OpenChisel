@@ -55,7 +55,7 @@ namespace chisel
                 Eigen::Vector3i numVoxels = chunk->GetNumVoxels();
                 float resolution = chunk->GetVoxelResolutionMeters();
                 Vec3 origin = chunk->GetOrigin();
-                float halfResolution = 0.5f * resolution;
+                float diag = 2.0 * sqrt(3.0f) * resolution;
                 Vec3 voxelCenter;
                 bool updated = false;
                 for (size_t i = 0; i < centroids.size(); i++)
@@ -68,7 +68,7 @@ namespace chisel
                         continue;
 
                     float voxelDist = voxelCenterInCamera.z();
-                    float depth = depthImage->BilinearInterpolateDepth(cameraPos(0), cameraPos(1));
+                    float depth = depthImage->DepthAt((int)cameraPos(1), (int)cameraPos(0)); //depthImage->BilinearInterpolateDepth(cameraPos(0), cameraPos(1));
 
                     if(std::isnan(depth))
                     {
@@ -78,18 +78,18 @@ namespace chisel
                     float truncation = truncator->GetTruncationDistance(depth);
                     float surfaceDist = depth - voxelDist;
 
-                    if (std::abs(surfaceDist) < truncation)
+                    if (fabs(surfaceDist) < truncation + diag)
                     {
                         DistVoxel& voxel = chunk->GetDistVoxelMutable(i);
-                        voxel.Integrate(surfaceDist, weighter->GetWeight(surfaceDist, truncation));
+                        voxel.Integrate(surfaceDist, 1.0f);
                         updated = true;
                     }
                     else if (enableVoxelCarving && surfaceDist > truncation + carvingDist)
                     {
                         DistVoxel& voxel = chunk->GetDistVoxelMutable(i);
-                        if (voxel.GetWeightInt() > 0 && voxel.GetSDF() < -0.05)
+                        if (voxel.GetWeight() > 0 && voxel.GetSDF() < 1e-5)
                         {
-                            voxel.Integrate(1.0e-5, 5.0f);
+                            voxel.Carve();
                             updated = true;
                         }
                     }
@@ -158,7 +158,7 @@ namespace chisel
                         else if (enableVoxelCarving && surfaceDist > truncation + carvingDist)
                         {
                             DistVoxel& voxel = chunk->GetDistVoxelMutable(i);
-                            if (voxel.GetWeightInt() > 0 && voxel.GetSDF() < -resolution)
+                            if (voxel.GetWeight() > 0 && voxel.GetSDF() < 1e-5)
                             {
                                 voxel.Carve();
                                 updated = true;

@@ -213,21 +213,49 @@ namespace chisel_ros
 
     void ChiselServer::DepthCameraInfoCallback(sensor_msgs::CameraInfoConstPtr cameraInfo)
     {
-        depthCamera.cameraModel = RosCameraToChiselCamera(cameraInfo);
-        depthCamera.cameraModel.SetNearPlane(GetNearPlaneDist());
-        depthCamera.cameraModel.SetFarPlane(GetFarPlaneDist());
-        depthCamera.gotInfo = true;
+        SetDepthCameraInfo(cameraInfo);
+    }
+
+    void ChiselServer::SetDepthPose(const Eigen::Affine3f& tf)
+    {
+        depthCamera.lastPose = tf;
+        depthCamera.gotPose = true;
+    }
+
+    void ChiselServer::SetColorImage(const sensor_msgs::ImageConstPtr& img)
+    {
+        if (!lastColorImage.get())
+        {
+            lastColorImage.reset(ROSImgToColorImg<ColorData>(img));
+        }
+
+        ROSImgToColorImg(img, lastColorImage.get());
+
+        colorCamera.lastImageTimestamp = img->header.stamp;
+        colorCamera.gotImage = true;
+    }
+
+    void ChiselServer::SetColorPose(const Eigen::Affine3f& tf)
+    {
+        colorCamera.lastPose = tf;
+        colorCamera.gotPose  = true;
+    }
+
+    void ChiselServer::SetDepthImage(const sensor_msgs::ImageConstPtr& img)
+    {
+        if (!lastDepthImage.get())
+        {
+          lastDepthImage.reset(new chisel::DepthImage<DepthData>(img->width, img->height));
+        }
+
+        ROSImgToDepthImg(img, lastDepthImage.get());
+        depthCamera.lastImageTimestamp = img->header.stamp;
+        depthCamera.gotImage = true;
     }
 
     void ChiselServer::DepthImageCallback(sensor_msgs::ImageConstPtr depthImage)
     {
-        printf("Depth callback.\n");
-        if (!lastDepthImage.get())
-        {
-            lastDepthImage.reset(new chisel::DepthImage<DepthData>(depthImage->width, depthImage->height));
-        }
-
-        ROSImgToDepthImg(depthImage, lastDepthImage.get());
+        SetDepthImage(depthImage);
 
         bool gotTransform = false;
         tf::StampedTransform tf;
@@ -253,9 +281,24 @@ namespace chisel_ros
         }
 
         depthCamera.lastPose = RosTfToChiselTf(tf);
-        depthCamera.lastImageTimestamp = depthImage->header.stamp;
 
         hasNewData = true;
+    }
+
+    void ChiselServer::SetColorCameraInfo(const sensor_msgs::CameraInfoConstPtr& info)
+    {
+        colorCamera.cameraModel = RosCameraToChiselCamera(info);
+        colorCamera.cameraModel.SetNearPlane(GetNearPlaneDist());
+        colorCamera.cameraModel.SetFarPlane(GetFarPlaneDist());
+        colorCamera.gotInfo = true;
+    }
+
+    void ChiselServer::SetDepthCameraInfo(const sensor_msgs::CameraInfoConstPtr& info)
+    {
+        depthCamera.cameraModel = RosCameraToChiselCamera(info);
+        depthCamera.cameraModel.SetNearPlane(GetNearPlaneDist());
+        depthCamera.cameraModel.SetFarPlane(GetFarPlaneDist());
+        depthCamera.gotInfo = true;
     }
 
     void ChiselServer::SubscribeColorImage(const std::string& imageTopic, const std::string& infoTopic, const std::string& transform)
@@ -269,22 +312,12 @@ namespace chisel_ros
 
     void ChiselServer::ColorCameraInfoCallback(sensor_msgs::CameraInfoConstPtr cameraInfo)
     {
-        colorCamera.cameraModel = RosCameraToChiselCamera(cameraInfo);
-        colorCamera.cameraModel.SetNearPlane(GetNearPlaneDist());
-        colorCamera.cameraModel.SetFarPlane(GetFarPlaneDist());
-        colorCamera.gotInfo = true;
+        SetColorCameraInfo(cameraInfo);
     }
 
     void ChiselServer::ColorImageCallback(sensor_msgs::ImageConstPtr colorImage)
     {
-        if (!lastColorImage.get())
-        {
-            lastColorImage.reset(ROSImgToColorImg<ColorData>(colorImage));
-        }
-        else
-        {
-            ROSImgToColorImg(colorImage, lastColorImage.get());
-        }
+        SetColorImage(colorImage);
 
         bool gotTransform = false;
         tf::StampedTransform tf;
@@ -310,7 +343,6 @@ namespace chisel_ros
         }
 
         colorCamera.lastPose = RosTfToChiselTf(tf);
-        colorCamera.lastImageTimestamp = colorImage->header.stamp;
     }
 
     void ChiselServer::SubscribePointCloud(const std::string& topic)
@@ -376,9 +408,13 @@ namespace chisel_ros
             }
             else
             {
+                printf("CHISEL: Integrating depth scan\n");
                 chiselMap->IntegrateDepthScan<DepthData>(projectionIntegrator, lastDepthImage, depthCamera.lastPose, depthCamera.cameraModel);
             }
+            printf("CHISEL: Done with scan\n");
             PublishLatestChunkBoxes();
+            PublishDepthFrustum();
+
             chiselMap->UpdateMeshes();
             hasNewData = false;
         }
@@ -504,9 +540,9 @@ namespace chisel_ros
             return;
         }
 
-        chisel::Vec3 lightDir(0.2, 0.4, -1.0f);
+        chisel::Vec3 lightDir(0.2, 0.2, 1.0f);
         lightDir.normalize();
-        const chisel::Vec3 ambient(0.4f, 0.4f, 0.5f);
+        const chisel::Vec3 ambient(0.2f, 0.2f, 0.3f);
         for (const std::pair<chisel::ChunkID, chisel::MeshPtr>& meshes : meshMap)
         {
             const chisel::MeshPtr& mesh = meshes.second;
@@ -530,13 +566,12 @@ namespace chisel_ros
                     color.a = 1.0f;
                     marker->colors.push_back(color);
                 }
-
                 else if(mesh->HasNormals())
                 {
-                    chisel::Vec3 lambert(1.0f, 1.0f, 1.0f);
+                    chisel::Vec3 lambert(0.6f, 0.6f, 0.5f);
                     const chisel::Vec3 normal = mesh->normals[i];
 
-                    lambert = fmax(normal.dot(lightDir), 0) * lambert + ambient;
+                    lambert = fmin(fmax(normal.dot(lightDir), 0), 1.0f) * lambert + ambient;
 
                     color.r = fmax(fmin(0.5f * (normal.x() + 1.0f), 1.0f), 0);
                     color.g = fmax(fmin(0.5f * (normal.y() + 1.0f), 1.0f), 0);
@@ -544,7 +579,6 @@ namespace chisel_ros
                     color.a = 1.0f;
                     marker->colors.push_back(color);
                 }
-
                 else
                 {
                     float zval = vec.z() - 5;

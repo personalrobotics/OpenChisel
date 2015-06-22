@@ -120,6 +120,8 @@ namespace chisel
             ColorizeMesh(mesh.get());
         }
 
+        ComputeNormalsFromGradients(mesh.get());
+
         mutex.lock();
         if(!mesh->vertices.empty())
             allMeshes[chunkID] = mesh;
@@ -135,7 +137,7 @@ namespace chisel
         }
 
         std::mutex mutex;
-        for (const std::pair<ChunkID, bool>& chunkID : chunks)
+        for (const std::pair<ChunkID, ChunkPtr>& chunkID : chunks)
         //parallel_for(chunks.begin(), chunks.end(), [this, &mutex](const ChunkID& chunkID)
         {
             this->RecomptueMesh(ChunkID(chunkID.first), mutex);
@@ -246,7 +248,7 @@ namespace chisel
 
             // Do not extract a mesh here if one of the corner is unobserved and
             // outside the truncation region.
-            if (thisVoxel.GetWeightInt() == 0)
+            if (thisVoxel.GetWeight() <= 1e-15)
             {
                 allNeighborsObserved = false;
                 break;
@@ -276,7 +278,7 @@ namespace chisel
                 const DistVoxel& thisVoxel = chunk->GetDistVoxel(cornerIDX.x(), cornerIDX.y(), cornerIDX.z());
                 // Do not extract a mesh here if one of the corners is unobserved
                 // and outside the truncation region.
-                if (thisVoxel.GetWeightInt() == 0)
+                if (thisVoxel.GetWeight() <= 1e-15)
                 {
                     allNeighborsObserved = false;
                     break;
@@ -308,11 +310,16 @@ namespace chisel
                 if (HasChunk(neighborID))
                 {
                     const ChunkPtr& neighborChunk = GetChunk(neighborID);
+                    if(!neighborChunk->IsCoordValid(cornerIDX.x(), cornerIDX.y(), cornerIDX.z()))
+                    {
+                        allNeighborsObserved = false;
+                        break;
+                    }
 
                     const DistVoxel& thisVoxel = neighborChunk->GetDistVoxel(cornerIDX.x(), cornerIDX.y(), cornerIDX.z());
                     // Do not extract a mesh here if one of the corners is unobserved
                     // and outside the truncation region.
-                    if (thisVoxel.GetWeightInt() == 0)
+                    if (thisVoxel.GetWeight() <= 1e-15)
                     {
                         allNeighborsObserved = false;
                         break;
@@ -359,7 +366,7 @@ namespace chisel
                 for (index.x() = 0; index.x() < maxX - 1; index.x()++)
                 {
                     i = chunk->GetVoxelID(index.x(), index.y(), index.z());
-                    ExtractInsideVoxelMesh(chunk, index, centroids[i] + chunk->GetOrigin(), &nextIndex, mesh);
+                    ExtractInsideVoxelMesh(chunk, index, centroids.at(i) + chunk->GetOrigin(), &nextIndex, mesh);
                 }
             }
         }
@@ -372,7 +379,7 @@ namespace chisel
             for (index.y() = 0; index.y() < maxY; index.y()++)
             {
                 i = chunk->GetVoxelID(index.x(), index.y(), index.z());
-                ExtractBorderVoxelMesh(chunk, index, centroids[i] + chunk->GetOrigin(), &nextIndex, mesh);
+                ExtractBorderVoxelMesh(chunk, index, centroids.at(i) + chunk->GetOrigin(), &nextIndex, mesh);
             }
         }
 
@@ -384,7 +391,7 @@ namespace chisel
             for (index.x() = 0; index.x() < maxX - 1; index.x()++)
             {
                 i = chunk->GetVoxelID(index.x(), index.y(), index.z());
-                ExtractBorderVoxelMesh(chunk, index, centroids[i] + chunk->GetOrigin(), &nextIndex, mesh);
+                ExtractBorderVoxelMesh(chunk, index, centroids.at(i) + chunk->GetOrigin(), &nextIndex, mesh);
             }
         }
 
@@ -396,7 +403,7 @@ namespace chisel
             for (index.x() = 0; index.x() < maxX; index.x()++)
             {
                 i = chunk->GetVoxelID(index.x(), index.y(), index.z());
-                ExtractBorderVoxelMesh(chunk, index, centroids[i] + chunk->GetOrigin(), &nextIndex, mesh);
+                ExtractBorderVoxelMesh(chunk, index, centroids.at(i) + chunk->GetOrigin(), &nextIndex, mesh);
             }
         }
 
@@ -404,6 +411,51 @@ namespace chisel
 
         assert(mesh->vertices.size() == mesh->normals.size());
         assert(mesh->vertices.size() == mesh->indices.size());
+    }
+
+    bool ChunkManager::GetSDFAndGradient(const Eigen::Vector3f& pos, double* dist, Eigen::Vector3f* grad)
+    {
+        Eigen::Vector3f posf = Eigen::Vector3f(std::floor(pos.x() / voxelResolutionMeters) * voxelResolutionMeters + voxelResolutionMeters / 2.0f,
+                std::floor(pos.y() / voxelResolutionMeters) * voxelResolutionMeters + voxelResolutionMeters / 2.0f,
+                std::floor(pos.z() / voxelResolutionMeters) * voxelResolutionMeters + voxelResolutionMeters / 2.0f);
+        if (!GetSDF(posf, dist)) return false;
+        double ddxplus, ddyplus, ddzplus = 0.0;
+        double ddxminus, ddyminus, ddzminus = 0.0;
+        if (!GetSDF(posf + Eigen::Vector3f(voxelResolutionMeters, 0, 0), &ddxplus)) return false;
+        if (!GetSDF(posf + Eigen::Vector3f(0, voxelResolutionMeters, 0), &ddyplus)) return false;
+        if (!GetSDF(posf + Eigen::Vector3f(0, 0, voxelResolutionMeters), &ddzplus)) return false;
+        if (!GetSDF(posf - Eigen::Vector3f(voxelResolutionMeters, 0, 0), &ddxminus)) return false;
+        if (!GetSDF(posf - Eigen::Vector3f(0, voxelResolutionMeters, 0), &ddyminus)) return false;
+        if (!GetSDF(posf - Eigen::Vector3f(0, 0, voxelResolutionMeters), &ddzminus)) return false;
+
+        *grad = Eigen::Vector3f(ddxplus - ddxminus, ddyplus - ddyminus, ddzplus - ddzminus);
+        grad->normalize();
+        return true;
+    }
+
+    bool ChunkManager::GetSDF(const Eigen::Vector3f& posf, double* dist)
+    {
+        chisel::ChunkPtr chunk = GetChunkAt(posf);
+        if(chunk)
+        {
+            Eigen::Vector3f relativePos = posf - chunk->GetOrigin();
+            Eigen::Vector3i coords = chunk->GetVoxelCoords(relativePos);
+            chisel::VoxelID id = chunk->GetVoxelID(coords);
+            if(id >= 0 && id < chunk->GetTotalNumVoxels())
+            {
+                const chisel::DistVoxel& voxel = chunk->GetDistVoxel(id);
+                if(voxel.GetWeight() > 1e-12)
+                {
+                    *dist = voxel.GetSDF();
+                    return true;
+                }
+            }
+            return false;
+        }
+        else
+        {
+            return false;
+        }
     }
 
     Vec3 ChunkManager::InterpolateColor(const Vec3& colorPos)
@@ -487,7 +539,8 @@ namespace chisel
 
         if(chunk.get())
         {
-            return &(chunk->GetDistVoxel(chunk->GetVoxelID(pos)));
+            Vec3 rel = (pos - chunk->GetOrigin());
+            return &(chunk->GetDistVoxel(chunk->GetVoxelID(rel)));
         }
         else return nullptr;
     }
@@ -498,7 +551,8 @@ namespace chisel
 
         if(chunk.get())
         {
-            const VoxelID& id = chunk->GetVoxelID(pos);
+            Vec3 rel = (pos - chunk->GetOrigin());
+            const VoxelID& id = chunk->GetVoxelID(rel);
             if (id >= 0 && id < chunk->GetTotalNumVoxels())
             {
                 return &(chunk->GetColorVoxel(id));
@@ -511,6 +565,25 @@ namespace chisel
         else return nullptr;
     }
 
+
+    void ChunkManager::ComputeNormalsFromGradients(Mesh* mesh)
+    {
+        assert(mesh != nullptr);
+        double dist;
+        Vec3 grad;
+        for (size_t i = 0; i < mesh->vertices.size(); i++)
+        {
+            const Vec3& vertex = mesh->vertices.at(i);
+            if(GetSDFAndGradient(vertex, &dist, &grad))
+            {
+                float mag = grad.norm();
+                if(mag> 1e-12)
+                {
+                    mesh->normals[i] = grad * (1.0f / mag);
+                }
+            }
+        }
+    }
 
     void ChunkManager::ColorizeMesh(Mesh* mesh)
     {
