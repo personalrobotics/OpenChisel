@@ -32,8 +32,16 @@ For speed, it is essential to compile `open_chisel` with optimization. You will 
 * Eigen
 * C++11
 * catkin (`ros-hydro` or `ros-indigo` or higher)
-* [PCL 1.7](http://pointclouds.org/)
+* [PCL 1.8](http://pointclouds.org/) compiled with stdC++11 enabled.
 * ROS OpenCV [cv_bridge](http://wiki.ros.org/cv_bridge)
+
+### A note on PCL
+Unfortunately, PCL 1.7x (the standard PCL included in current versions of ROS) doesn't work with C++11. This project makes heavy use of C++11, so in order to use Chisel, you will have to download and install PCL 1.8 from source, and compile it with C++11 enabled.
+
+1. Download PCL 1.8 from here: https://github.com/PointCloudLibrary/pcl
+2. Modify line 91 of `CMakeLists.txt` in PCL to say `SET(CMAKE_CXX_FLAGS "-Wall -std=C++11 ...`
+3. Build and install PCL 1.8
+4. Rebuild Chisel
 
 ###Launching chisel_ros Server
 
