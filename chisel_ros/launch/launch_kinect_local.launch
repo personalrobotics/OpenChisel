@@ -6,20 +6,20 @@
         <param name="chunk_size_z" value="16"/>
         <param name="truncation_scale" value="10.0"/>
         <param name="integration_weight" value="1"/>
-        <param name="use_voxel_carving" value="true"/>
-        <param name="use_color" value="false"/>
+        <param name="use_voxel_carving" value="false"/>
+        <param name="use_color" value="true"/>
         <param name="carving_dist_m" value="0.05"/>
-        <param name="voxel_resolution_m" value="0.025"/>
-        <param name="far_plane_dist" value="1.5"/>
-        <param name="base_transform" value="/base_link"/>
-        <param name="depth_image_transform" value="/camera_depth_optical_frame"/>
-        <param name="color_image_transform" value="/camera_rgb_optical_frame"/>
+        <param name="voxel_resolution_m" value="0.015"/>
+        <param name="far_plane_dist" value="1.1"/>
+        <param name="base_transform" value="/herb_base"/>
+        <param name="depth_image_transform" value="/head/kinect2_ir_optical_frame"/>
+        <param name="color_image_transform" value="/head/kinect2_rgb_optical_frame"/>
         <param name="fusion_mode" value="DepthImage"/>
     
-        <remap from="/depth_image" to="/camera/depth/image"/>
-        <remap from="/depth_camera_info" to="/camera/depth/camera_info"/>
-        <remap from="/color_image" to="/camera/ir/image"/>
-        <remap from="/color_camera_info" to="/camera/ir/camera_info"/>
+        <remap from="/depth_image" to="/head/kinect2/qhd/image_depth_rect"/>
+        <remap from="/depth_camera_info" to="/head/kinect2/qhd/camera_info"/>
+        <remap from="/color_image" to="/head/kinect2/qhd/image_color"/>
+        <remap from="/color_camera_info" to="/head/kinect2/qhd/camera_info"/>
         <remap from="/camera/depth_registered/points" to="/camera/depth/points"/>
 
     </node>

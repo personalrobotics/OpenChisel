@@ -76,15 +76,46 @@ namespace chisel_ros
 
     template <class DataType> void ROSImgToDepthImg(sensor_msgs::ImageConstPtr image, chisel::DepthImage<DataType>* depthImage)
     {
-            size_t dataSize =image->step / image->width;
-            assert(depthImage->GetHeight() == static_cast<int>(image->height) && depthImage->GetWidth() == static_cast<int>(image->width));
-            assert(dataSize == sizeof(DataType));
-            const DataType* imageData = reinterpret_cast<const DataType*>(image->data.data());
-            DataType* depthImageData = depthImage->GetMutableData();
-            int totalPixels = image->width * image->height;
-            for (int i = 0; i < totalPixels; i++)
+            ROS_INFO("Got depth image of format %s\n", image->encoding.c_str());
+            bool mmImage = false;
+            
+            if (image->encoding == "16UC1")
             {
-                depthImageData[i] =  imageData[i];
+                mmImage = true;
+            }
+            else if (image->encoding == "32FC1")
+            {
+                mmImage = false;
+            }
+            else
+            {
+                ROS_ERROR("Unrecognized depth image format.");
+                return;
+            }
+            
+            if (!mmImage)
+            {
+                size_t dataSize =image->step / image->width;
+                assert(depthImage->GetHeight() == static_cast<int>(image->height) && depthImage->GetWidth() == static_cast<int>(image->width));
+                assert(dataSize == sizeof(DataType));
+                const DataType* imageData = reinterpret_cast<const DataType*>(image->data.data());
+                DataType* depthImageData = depthImage->GetMutableData();
+                int totalPixels = image->width * image->height;
+                for (int i = 0; i < totalPixels; i++)
+                {
+                    depthImageData[i] =  imageData[i];
+                }
+            }
+            else
+            {
+                assert(depthImage->GetHeight() == static_cast<int>(image->height) && depthImage->GetWidth() == static_cast<int>(image->width));
+                const uint16_t* imageData = reinterpret_cast<const uint16_t*>(image->data.data());
+                DataType* depthImageData = depthImage->GetMutableData();
+                int totalPixels = image->width * image->height;
+                for (int i = 0; i < totalPixels; i++)
+                {
+                    depthImageData[i] =  (1.0f / 1000.0f) * imageData[i];
+                }
             }
     }
 

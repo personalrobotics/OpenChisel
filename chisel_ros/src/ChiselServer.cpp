@@ -427,7 +427,7 @@ namespace chisel_ros
             ROS_INFO("Integrating point cloud");
             chiselMap->IntegratePointCloud(projectionIntegrator, *lastPointCloud, pointcloudTopic.lastPose, 0.1f, farPlaneDist);
             PublishLatestChunkBoxes();
-            chiselMap->UpdateMeshes();
+            chiselMap->UpdateMeshes();;
             hasNewData = false;
         }
     }
@@ -435,6 +435,7 @@ namespace chisel_ros
 
     void ChiselServer::PublishLatestChunkBoxes()
     {
+        if (!latestChunkPublisher) return;
         const chisel::ChunkManager& chunkManager = chiselMap->GetChunkManager();
         visualization_msgs::Marker marker;
         marker.header.stamp = ros::Time::now();
@@ -509,30 +510,20 @@ namespace chisel_ros
         chunkBoxPublisher.publish(marker);
     }
 
+    chisel::Vec3 LAMBERT(const chisel::Vec3& n, const chisel::Vec3& light)
+    {
+        return fmax(n.dot(light), 0.0f) * chisel::Vec3(0.5, 0.5, 0.5);
+    }
+
     void ChiselServer::FillMarkerTopicWithMeshes(visualization_msgs::Marker* marker)
     {
         assert(marker != nullptr);
         marker->header.stamp = ros::Time::now();
         marker->header.frame_id = baseTransform;
-        marker->ns = "mesh";
-        marker->type = visualization_msgs::Marker::TRIANGLE_LIST;
-        marker->id = 0;
         marker->scale.x = 1;
         marker->scale.y = 1;
         marker->scale.z = 1;
-        marker->pose.position.x = 0;
-        marker->pose.position.y = 0;
-        marker->pose.position.z = 0;
-        marker->pose.orientation.x = 0.0;
-        marker->pose.orientation.y = 0.0;
-        marker->pose.orientation.z = 0.0;
-        marker->pose.orientation.w = 1.0;
-        marker->color.r = 1.0f;
-        marker->color.g = 1.0f;
-        marker->color.b = 1.0f;
-        marker->color.a = 1.0f;
-
-
+        marker->type = visualization_msgs::Marker::TRIANGLE_LIST;
         const chisel::MeshMap& meshMap = chiselMap->GetChunkManager().GetAllMeshes();
 
         if(meshMap.size() == 0)
@@ -540,58 +531,61 @@ namespace chisel_ros
             return;
         }
 
-        chisel::Vec3 lightDir(0.2, 0.2, 1.0f);
+        chisel::Vec3 lightDir(0.8f, -0.2f, 0.7f);
         lightDir.normalize();
-        const chisel::Vec3 ambient(0.2f, 0.2f, 0.3f);
+        chisel::Vec3 lightDir1(-0.5f, 0.2f, 0.2f);
+        lightDir.normalize();
+        const chisel::Vec3 ambient(0.2f, 0.2f, 0.2f);
+        //int idx = 0;
         for (const std::pair<chisel::ChunkID, chisel::MeshPtr>& meshes : meshMap)
         {
             const chisel::MeshPtr& mesh = meshes.second;
-
-            geometry_msgs::Point pt;
-            std_msgs::ColorRGBA color;
             for (size_t i = 0; i < mesh->vertices.size(); i++)
             {
                 const chisel::Vec3& vec = mesh->vertices[i];
-                pt.x = vec.x();
-                pt.y = vec.y();
-                pt.z = vec.z();
+                geometry_msgs::Point pt;
+                pt.x = vec[0];
+                pt.y = vec[1];
+                pt.z = vec[2];
                 marker->points.push_back(pt);
 
                 if(mesh->HasColors())
                 {
                     const chisel::Vec3& meshCol = mesh->colors[i];
-                    color.r = meshCol.x();
-                    color.g = meshCol.y();
-                    color.b = meshCol.z();
-                    color.a = 1.0f;
-                    marker->colors.push_back(color);
-                }
-                else if(mesh->HasNormals())
-                {
-                    chisel::Vec3 lambert(0.6f, 0.6f, 0.5f);
-                    const chisel::Vec3 normal = mesh->normals[i];
-
-                    lambert = fmin(fmax(normal.dot(lightDir), 0), 1.0f) * lambert + ambient;
-
-                    color.r = fmax(fmin(0.5f * (normal.x() + 1.0f), 1.0f), 0);
-                    color.g = fmax(fmin(0.5f * (normal.y() + 1.0f), 1.0f), 0);
-                    color.b = fmax(fmin(0.5f * (normal.z() + 1.0f), 1.0f), 0);
-                    color.a = 1.0f;
+                    std_msgs::ColorRGBA color;
+                    color.r = meshCol[0];
+                    color.g = meshCol[1];
+                    color.b = meshCol[2];
+                    color.a = 1.0;
                     marker->colors.push_back(color);
                 }
                 else
                 {
-                    float zval = vec.z() - 5;
-                    color.r = (zval) / 10.0f;
-                    color.g = 10.0f / (fabs(zval) + 0.01f);
-                    color.b = (zval * zval) / 10.0f;
-                    color.a = 1.0f;
+                  if(mesh->HasNormals())
+                  {
+                      const chisel::Vec3 normal = mesh->normals[i];
+                      std_msgs::ColorRGBA color;
+                      chisel::Vec3 lambert = LAMBERT(normal, lightDir) + LAMBERT(normal, lightDir1) + ambient;
+                      color.r = fmin(lambert[0], 1.0);
+                      color.g = fmin(lambert[1], 1.0);
+                      color.b = fmin(lambert[2], 1.0);
+                      color.a = 1.0;
+                      marker->colors.push_back(color);
+                  }
+                  else
+                  {
+                    std_msgs::ColorRGBA color;
+                    color.r = vec[0] * 0.25 + 0.5;
+                    color.g = vec[1] * 0.25 + 0.5;
+                    color.b = vec[2] * 0.25 + 0.5;
+                    color.a = 1.0;
                     marker->colors.push_back(color);
+                  }
                 }
+                //marker->indicies.push_back(idx);
+                //idx++;
             }
-
         }
-
     }
 
     bool ChiselServer::SaveMesh(chisel_ros::SaveMeshService::Request& request, chisel_ros::SaveMeshService::Response& response)
