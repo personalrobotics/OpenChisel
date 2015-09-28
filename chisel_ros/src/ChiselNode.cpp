@@ -132,7 +132,7 @@ int main(int argc, char** argv)
         ros::Rate loop_rate(100);
         ros::spinOnce();
 
-        if(server->HasNewData())
+        if(!server->IsPaused() && server->HasNewData())
         {
             ROS_INFO("Got data.");
             switch (server->GetMode())

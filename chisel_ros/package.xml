@@ -16,14 +16,14 @@
   <build_depend>std_msgs</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>open_chisel</build_depend>
+  <build_depend>chisel_msgs</build_depend>
   <build_depend>tf</build_depend>
   <build_depend>open_chisel</build_depend>
-  <build_depend>message_generation</build_depend>
   <build_depend>visualization_msgs</build_depend>
   <build_depend>pcl_ros</build_depend>
   <run_depend>std_msgs</run_depend>
+  <run_depend>chisel_msgs</run_depend>
   <run_depend>sensor_msgs</run_depend>
-  <run_depend>message_runtime</run_depend>
   <run_depend>open_chisel</run_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>tf</run_depend>

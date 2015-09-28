@@ -22,10 +22,10 @@
 #ifndef CHISELSERVER_H_
 #define CHISELSERVER_H_
 
-#include <chisel_ros/ResetService.h>
-#include <chisel_ros/PauseService.h>
-#include <chisel_ros/SaveMeshService.h>
-#include <chisel_ros/GetAllChunksService.h>
+#include <chisel_msgs/ResetService.h>
+#include <chisel_msgs/PauseService.h>
+#include <chisel_msgs/SaveMeshService.h>
+#include <chisel_msgs/GetAllChunksService.h>
 
 #include <memory>
 #include <open_chisel/Chisel.h>
@@ -133,10 +133,10 @@ namespace chisel_ros
             inline void SetNearPlaneDist(float dist) { nearPlaneDist = dist; }
             inline void SetFarPlaneDist(float dist) { farPlaneDist = dist; }
 
-            bool Reset(chisel_ros::ResetService::Request& request, chisel_ros::ResetService::Response& response);
-            bool TogglePaused(chisel_ros::PauseService::Request& request, chisel_ros::PauseService::Response& response);
-            bool SaveMesh(chisel_ros::SaveMeshService::Request& request, chisel_ros::SaveMeshService::Response& response);
-            bool GetAllChunks(chisel_ros::GetAllChunksService::Request& request, chisel_ros::GetAllChunksService::Response& response);
+            bool Reset(chisel_msgs::ResetService::Request& request, chisel_msgs::ResetService::Response& response);
+            bool TogglePaused(chisel_msgs::PauseService::Request& request, chisel_msgs::PauseService::Response& response);
+            bool SaveMesh(chisel_msgs::SaveMeshService::Request& request, chisel_msgs::SaveMeshService::Response& response);
+            bool GetAllChunks(chisel_msgs::GetAllChunksService::Request& request, chisel_msgs::GetAllChunksService::Response& response);
 
             inline bool IsPaused() { return isPaused; }
             inline void SetPaused(bool paused) { isPaused = paused; }

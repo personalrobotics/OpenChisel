@@ -104,17 +104,17 @@ namespace chisel
 
                     float resolution = chunk->GetVoxelResolutionMeters();
                     Vec3 origin = chunk->GetOrigin();
-                    float resolutionDiagonal = sqrt(3.0f) * resolution;
+                    float resolutionDiagonal = 2.0 * sqrt(3.0f) * resolution;
                     bool updated = false;
-                    std::vector<size_t> indexes;
-                    indexes.resize(centroids.size());
-                    for (size_t i = 0; i < centroids.size(); i++)
-                    {
-                        indexes[i] = i;
-                    }
-
+                    //std::vector<size_t> indexes;
+                    //indexes.resize(centroids.size());
                     //for (size_t i = 0; i < centroids.size(); i++)
-                    parallel_for(indexes.begin(), indexes.end(), [&](const size_t& i)
+                    //{
+                    //    indexes[i] = i;
+                    //}
+
+                    for (size_t i = 0; i < centroids.size(); i++)
+                    //parallel_for(indexes.begin(), indexes.end(), [&](const size_t& i)
                     {
                         Color<ColorType> color;
                         Vec3 voxelCenter = centroids[i] + origin;
@@ -123,15 +123,15 @@ namespace chisel
 
                         if (!depthCamera.IsPointOnImage(cameraPos) || voxelCenterInCamera.z() < 0)
                         {
-                            return;
+                            continue;
                         }
 
                         float voxelDist = voxelCenterInCamera.z();
-                        float depth = depthImage->BilinearInterpolateDepth(cameraPos(0), cameraPos(1));
+                        float depth = depthImage->DepthAt((int)cameraPos(1), (int)cameraPos(0)); //depthImage->BilinearInterpolateDepth(cameraPos(0), cameraPos(1));
 
                         if(std::isnan(depth))
                         {
-                            return;
+                            continue;
                         }
 
                         float truncation = truncator->GetTruncationDistance(depth);
@@ -144,10 +144,14 @@ namespace chisel
                             if(colorCamera.IsPointOnImage(colorCameraPos))
                             {
                                 ColorVoxel& colorVoxel = chunk->GetColorVoxelMutable(i);
-                                int r = static_cast<int>(colorCameraPos(1));
-                                int c = static_cast<int>(colorCameraPos(0));
-                                colorImage->At(r, c, &color);
-                                colorVoxel.Integrate(color.red, color.green, color.blue, 1);
+
+                                if (colorVoxel.GetWeight() < 5)
+                                {
+                                    int r = static_cast<int>(colorCameraPos(1));
+                                    int c = static_cast<int>(colorCameraPos(0));
+                                    colorImage->At(r, c, &color);
+                                    colorVoxel.Integrate(color.red, color.green, color.blue, 1);
+                                }
                             }
 
                             DistVoxel& voxel = chunk->GetDistVoxelMutable(i);
@@ -167,7 +171,7 @@ namespace chisel
 
 
                     }
-                    );
+                    //);
 
                     return updated;
             }

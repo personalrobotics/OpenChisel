@@ -24,11 +24,11 @@
 #define SERIALIZATION_H_
 
 #include <open_chisel/Chunk.h>
-#include <chisel_ros/ChunkMessage.h>
+#include <chisel_msgs/ChunkMessage.h>
 
 namespace chisel_ros
 {
-    void FillChunkMessage(chisel::ChunkConstPtr chunk, ChunkMessage* message)
+    void FillChunkMessage(chisel::ChunkConstPtr chunk, chisel_msgs::ChunkMessage* message)
     {
         chisel::ChunkHasher hasher;
         assert(message != nullptr);
