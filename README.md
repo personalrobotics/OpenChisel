@@ -23,7 +23,8 @@ Note: you will also need to get the messages package, [chisel_msgs](https://gith
 
 ###Supported ROS image types:
 **Depth Images**
-* 32 Floating Point Mono (`32FC1`)
+* 32 bit floating point mono in meters (`32FC1`)
+* 16 bit unsigned characters in millimeters (`16UC1`)
 
 **Color Images**
 * `BRG8`
