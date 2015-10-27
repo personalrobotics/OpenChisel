@@ -19,6 +19,8 @@ For speed, it is essential to compile `open_chisel` with optimization. You will 
 ##chisel_ros
 `chisel_ros` is a wrapper around `open_chisel` that interfaces with ROS-based depth and color sensors. The main class `chisel_ros` provides is `ChiselServer`, which subscribes to depth images, color images, TF frames, and camera intrinsics.
 
+Note: you will also need to get the messages package, [chisel_msgs](https://github.com/personalrobotics/chisel_msgs) to build this.
+
 ###Supported ROS image types:
 **Depth Images**
 * 32 Floating Point Mono (`32FC1`)
