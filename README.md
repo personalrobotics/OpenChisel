@@ -1,10 +1,10 @@
 OpenChisel
 ==========
 
-An open-source version of the Chisel chunked TSDF library. It contains Two packages:
+An open-source version of the Chisel chunked TSDF library. It contains two packages:
 
 ##open_chisel
-`open_chisel` is an implementaiton of a generic truncated signed distance field ([TSDF](https://graphics.stanford.edu/papers/volrange/volrange.pdf)) 3D mapping library; based on the Chisel mapping framework developed for Google's [Project Tango](https://www.google.com/atap/project-tango/). `open_chisel` is [chunked and spatially hashed](http://www.graphics.stanford.edu/~niessner/niessner2013hashing.html), making it more memory-efficient than fixed-grid mapping approaches, and more performant than octree-based approahces.
+`open_chisel` is an implementation of a generic truncated signed distance field ([TSDF](https://graphics.stanford.edu/papers/volrange/volrange.pdf)) 3D mapping library; based on the Chisel mapping framework developed for Google's [Project Tango](https://www.google.com/atap/project-tango/). `open_chisel` is [chunked and spatially hashed](http://www.graphics.stanford.edu/~niessner/niessner2013hashing.html), making it more memory-efficient than fixed-grid mapping approaches, and more performant than octree-based approaches.
 
 This reference implementation does not include any pose estimation. Therefore **the pose of the sensor must be provided from an external source**. This implementation also *avoids the use of any GPU computing*, which makes it suitable for limited hardware platforms. It does not contain any system for rendering/displaying the resulting 3D reconstruction.
 
@@ -14,7 +14,7 @@ This reference implementation does not include any pose estimation. Therefore **
 * [catkin](http://wiki.ros.org/catkin) build system
 
 Compilation note:
-For speed, it is essential to compile `open_chisel` with optimization. You will need to add the flag `-DCMAKE_BUILD_TYPE=Release` to your `catkin_make` command when buildling.
+For speed, it is essential to compile `open_chisel` with optimization. You will need to add the flag `-DCMAKE_BUILD_TYPE=Release` to your `catkin_make` command when building.
 
 ##chisel_ros
 `chisel_ros` is a wrapper around `open_chisel` that interfaces with ROS-based depth and color sensors. The main class `chisel_ros` provides is `ChiselServer`, which subscribes to depth images, color images, TF frames, and camera intrinsics.
@@ -39,7 +39,7 @@ For speed, it is essential to compile `open_chisel` with optimization. You will 
 Unfortunately, PCL 1.7x (the standard PCL included in current versions of ROS) doesn't work with C++11. This project makes heavy use of C++11, so in order to use Chisel, you will have to download and install PCL 1.8 from source, and compile it with C++11 enabled.
 
 1. Download PCL 1.8 from here: https://github.com/PointCloudLibrary/pcl
-2. Modify line 91 of `CMakeLists.txt` in PCL to say `SET(CMAKE_CXX_FLAGS "-Wall -std=C++11 ...`
+2. Modify line 91 of `CMakeLists.txt` in PCL to say `SET(CMAKE_CXX_FLAGS "-Wall -std=c++11 ...`
 3. Build and install PCL 1.8
 4. Rebuild Chisel
 
