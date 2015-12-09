@@ -1,10 +1,17 @@
 cmake_minimum_required(VERSION 2.8.3)
 
+#set(PCL_ROOT "/home/marius/thor/src/external/pcl")
+set(CMAKE_BUILD_TYPE Release)
+
+
 find_package(catkin REQUIRED COMPONENTS roscpp std_msgs sensor_msgs geometry_msgs tf open_chisel pcl_ros chisel_msgs)
 
 find_package(cmake_modules REQUIRED)
 find_package(Eigen REQUIRED)
-find_package(PCL 1.8 REQUIRED)
+
+file(GLOB_RECURSE HEADER_FILES include/*.h)
+
+find_package(PCL REQUIRED)
 include_directories(${Eigen_INCLUDE_DIRS})
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++0x")
 
@@ -20,8 +27,10 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 
 add_library(${PROJECT_NAME} src/ChiselServer.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
-add_executable(ChiselNode src/ChiselNode.cpp)
+add_executable(ChiselNode src/ChiselNode.cpp ${HEADER_FILES})
 target_link_libraries(ChiselNode ${PROJECT_NAME} ${catkin_LIBRARIES})
+
+
 
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
