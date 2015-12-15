@@ -44,8 +44,8 @@ namespace chisel_ros
 
         Eigen::Vector3i size = chunk->GetNumVoxels();
         message->num_voxels_x = size.x();
-        message->num_voxels_x = size.y();
-        message->num_voxels_x = size.z();
+        message->num_voxels_y = size.y();
+        message->num_voxels_z = size.z();
 
         message->distance_data.reserve(chunk->GetTotalNumVoxels());
 
