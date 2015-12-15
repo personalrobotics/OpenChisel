@@ -153,7 +153,7 @@ namespace chisel
                       int c = static_cast<int>(colorCameraPos(0));
                       colorImage->At(r, c, &color);
 
-                      colorVoxel.Integrate(color.blue, color.green, color.red, 1);
+                      colorVoxel.Integrate(color.red, color.green, color.blue, 1);
                     }
                 }
 
