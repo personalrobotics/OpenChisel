@@ -37,164 +37,167 @@
 namespace chisel
 {
 
-    class ProjectionIntegrator
+  class ProjectionIntegrator
+  {
+  public:
+    ProjectionIntegrator();
+    ProjectionIntegrator(const TruncatorPtr& t, const WeighterPtr& w, float carvingDist, bool enableCarving, const Vec3List& centroids);
+    virtual ~ProjectionIntegrator();
+
+    bool Integrate(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk) const;
+    bool IntegratePointCloud(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk) const;
+    bool IntegrateColorPointCloud(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk) const;
+    bool IntegrateChunk(Chunk &chunkToIntegrate, /* const Transform& cameraPose,*/ Chunk* chunk) const;
+
+    template<class DataType> bool Integrate(const std::shared_ptr<const DepthImage<DataType> >& depthImage, const PinholeCamera& camera, const Transform& cameraPose, Chunk* chunk) const
     {
-        public:
-            ProjectionIntegrator();
-            ProjectionIntegrator(const TruncatorPtr& t, const WeighterPtr& w, float carvingDist, bool enableCarving, const Vec3List& centroids);
-            virtual ~ProjectionIntegrator();
+      assert(chunk != nullptr);
 
-            bool Integrate(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk) const;
-            bool IntegratePointCloud(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk) const;
-            bool IntegrateColorPointCloud(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk) const;
+      Eigen::Vector3i numVoxels = chunk->GetNumVoxels();
+      float resolution = chunk->GetVoxelResolutionMeters();
+      Vec3 origin = chunk->GetOrigin();
+      float diag = 2.0 * sqrt(3.0f) * resolution;
+      Vec3 voxelCenter;
+      bool updated = false;
+      for (size_t i = 0; i < centroids.size(); i++)
+        {
+          voxelCenter = centroids[i] + origin;
+          Vec3 voxelCenterInCamera = cameraPose.linear().transpose() * (voxelCenter - cameraPose.translation());
+          Vec3 cameraPos = camera.ProjectPoint(voxelCenterInCamera);
 
-            template<class DataType> bool Integrate(const std::shared_ptr<const DepthImage<DataType> >& depthImage, const PinholeCamera& camera, const Transform& cameraPose, Chunk* chunk) const
+          if (!camera.IsPointOnImage(cameraPos) || voxelCenterInCamera.z() < 0)
+            continue;
+
+          float voxelDist = voxelCenterInCamera.z();
+          float depth = depthImage->DepthAt((int)cameraPos(1), (int)cameraPos(0)); //depthImage->BilinearInterpolateDepth(cameraPos(0), cameraPos(1));
+
+          if(std::isnan(depth))
             {
-                assert(chunk != nullptr);
+              continue;
+            }
 
-                Eigen::Vector3i numVoxels = chunk->GetNumVoxels();
-                float resolution = chunk->GetVoxelResolutionMeters();
-                Vec3 origin = chunk->GetOrigin();
-                float diag = 2.0 * sqrt(3.0f) * resolution;
-                Vec3 voxelCenter;
-                bool updated = false;
-                for (size_t i = 0; i < centroids.size(); i++)
+          float truncation = truncator->GetTruncationDistance(depth);
+          float surfaceDist = depth - voxelDist;
+
+          if (fabs(surfaceDist) < truncation + diag)
+            {
+              DistVoxel& voxel = chunk->GetDistVoxelMutable(i);
+              voxel.Integrate(surfaceDist, 1.0f);
+              updated = true;
+            }
+          else if (enableVoxelCarving && surfaceDist > truncation + carvingDist)
+            {
+              DistVoxel& voxel = chunk->GetDistVoxelMutable(i);
+              if (voxel.GetWeight() > 0 && voxel.GetSDF() < 1e-5)
                 {
-                    voxelCenter = centroids[i] + origin;
-                    Vec3 voxelCenterInCamera = cameraPose.linear().transpose() * (voxelCenter - cameraPose.translation());
-                    Vec3 cameraPos = camera.ProjectPoint(voxelCenterInCamera);
-
-                    if (!camera.IsPointOnImage(cameraPos) || voxelCenterInCamera.z() < 0)
-                        continue;
-
-                    float voxelDist = voxelCenterInCamera.z();
-                    float depth = depthImage->DepthAt((int)cameraPos(1), (int)cameraPos(0)); //depthImage->BilinearInterpolateDepth(cameraPos(0), cameraPos(1));
-
-                    if(std::isnan(depth))
-                    {
-                        continue;
-                    }
-
-                    float truncation = truncator->GetTruncationDistance(depth);
-                    float surfaceDist = depth - voxelDist;
-
-                    if (fabs(surfaceDist) < truncation + diag)
-                    {
-                        DistVoxel& voxel = chunk->GetDistVoxelMutable(i);
-                        voxel.Integrate(surfaceDist, 1.0f);
-                        updated = true;
-                    }
-                    else if (enableVoxelCarving && surfaceDist > truncation + carvingDist)
-                    {
-                        DistVoxel& voxel = chunk->GetDistVoxelMutable(i);
-                        if (voxel.GetWeight() > 0 && voxel.GetSDF() < 1e-5)
-                        {
-                            voxel.Carve();
-                            updated = true;
-                        }
-                    }
-
-
+                  voxel.Carve();
+                  updated = true;
                 }
-                return updated;
             }
-            template<class DataType, class ColorType> bool IntegrateColor(const std::shared_ptr<const DepthImage<DataType> >& depthImage, const PinholeCamera& depthCamera, const Transform& depthCameraPose, const std::shared_ptr<const ColorImage<ColorType> >& colorImage, const PinholeCamera& colorCamera, const Transform& colorCameraPose, Chunk* chunk) const
+
+
+        }
+      return updated;
+    }
+    template<class DataType, class ColorType> bool IntegrateColor(const std::shared_ptr<const DepthImage<DataType> >& depthImage, const PinholeCamera& depthCamera, const Transform& depthCameraPose, const std::shared_ptr<const ColorImage<ColorType> >& colorImage, const PinholeCamera& colorCamera, const Transform& colorCameraPose, Chunk* chunk) const
+    {
+      assert(chunk != nullptr);
+
+      float resolution = chunk->GetVoxelResolutionMeters();
+      Vec3 origin = chunk->GetOrigin();
+      float resolutionDiagonal = 2.0 * sqrt(3.0f) * resolution;
+      bool updated = false;
+      //std::vector<size_t> indexes;
+      //indexes.resize(centroids.size());
+      //for (size_t i = 0; i < centroids.size(); i++)
+      //{
+      //    indexes[i] = i;
+      //}
+
+
+      for (size_t i = 0; i < centroids.size(); i++)
+        //parallel_for(indexes.begin(), indexes.end(), [&](const size_t& i)
+        {
+          Color<ColorType> color;
+          Vec3 voxelCenter = centroids[i] + origin;
+          Vec3 voxelCenterInCamera = depthCameraPose.linear().transpose() * (voxelCenter - depthCameraPose.translation());
+          Vec3 cameraPos = depthCamera.ProjectPoint(voxelCenterInCamera);
+
+          if (!depthCamera.IsPointOnImage(cameraPos) || voxelCenterInCamera.z() < 0)
             {
-                    assert(chunk != nullptr);
-
-                    float resolution = chunk->GetVoxelResolutionMeters();
-                    Vec3 origin = chunk->GetOrigin();
-                    float resolutionDiagonal = 2.0 * sqrt(3.0f) * resolution;
-                    bool updated = false;
-                    //std::vector<size_t> indexes;
-                    //indexes.resize(centroids.size());
-                    //for (size_t i = 0; i < centroids.size(); i++)
-                    //{
-                    //    indexes[i] = i;
-                    //}
-
-                    for (size_t i = 0; i < centroids.size(); i++)
-                    //parallel_for(indexes.begin(), indexes.end(), [&](const size_t& i)
-                    {
-                        Color<ColorType> color;
-                        Vec3 voxelCenter = centroids[i] + origin;
-                        Vec3 voxelCenterInCamera = depthCameraPose.linear().transpose() * (voxelCenter - depthCameraPose.translation());
-                        Vec3 cameraPos = depthCamera.ProjectPoint(voxelCenterInCamera);
-
-                        if (!depthCamera.IsPointOnImage(cameraPos) || voxelCenterInCamera.z() < 0)
-                        {
-                            continue;
-                        }
-
-                        float voxelDist = voxelCenterInCamera.z();
-                        float depth = depthImage->DepthAt((int)cameraPos(1), (int)cameraPos(0)); //depthImage->BilinearInterpolateDepth(cameraPos(0), cameraPos(1));
-
-                        if(std::isnan(depth))
-                        {
-                            continue;
-                        }
-
-                        float truncation = truncator->GetTruncationDistance(depth);
-                        float surfaceDist = depth - voxelDist;
-
-                        if (std::abs(surfaceDist) < truncation + resolutionDiagonal)
-                        {
-                            Vec3 voxelCenterInColorCamera = colorCameraPose.linear().transpose() * (voxelCenter - colorCameraPose.translation());
-                            Vec3 colorCameraPos = colorCamera.ProjectPoint(voxelCenterInColorCamera);
-                            if(colorCamera.IsPointOnImage(colorCameraPos))
-                            {
-                                ColorVoxel& colorVoxel = chunk->GetColorVoxelMutable(i);
-
-                                if (colorVoxel.GetWeight() < 5)
-                                {
-                                    int r = static_cast<int>(colorCameraPos(1));
-                                    int c = static_cast<int>(colorCameraPos(0));
-                                    colorImage->At(r, c, &color);
-                                    colorVoxel.Integrate(color.red, color.green, color.blue, 1);
-                                }
-                            }
-
-                            DistVoxel& voxel = chunk->GetDistVoxelMutable(i);
-                            voxel.Integrate(surfaceDist, weighter->GetWeight(surfaceDist, truncation));
-
-                            updated = true;
-                        }
-                        else if (enableVoxelCarving && surfaceDist > truncation + carvingDist)
-                        {
-                            DistVoxel& voxel = chunk->GetDistVoxelMutable(i);
-                            if (voxel.GetWeight() > 0 && voxel.GetSDF() < 1e-5)
-                            {
-                                voxel.Carve();
-                                updated = true;
-                            }
-                        }
-
-
-                    }
-                    //);
-
-                    return updated;
+              continue;
             }
 
-            inline const TruncatorPtr& GetTruncator() { return truncator; }
-            inline void SetTruncator(const TruncatorPtr& value) { truncator = value; }
-            inline const WeighterPtr& GetWeighter() { return weighter; }
-            inline void SetWeighter(const WeighterPtr& value) { weighter = value; }
+          float voxelDist = voxelCenterInCamera.z();
+          float depth = depthImage->DepthAt((int)cameraPos(1), (int)cameraPos(0)); //depthImage->BilinearInterpolateDepth(cameraPos(0), cameraPos(1));
 
-            inline float GetCarvingDist() { return carvingDist; }
-            inline bool IsCarvingEnabled() { return enableVoxelCarving; }
-            inline void SetCarvingDist(float dist) { carvingDist = dist; }
-            inline void SetCarvingEnabled(bool enabled) { enableVoxelCarving = enabled; }
+          if(std::isnan(depth))
+            {
+              continue;
+            }
 
-            inline void SetCentroids(const Vec3List& c) { centroids = c; }
+          float truncation = truncator->GetTruncationDistance(depth);
+          float surfaceDist = depth - voxelDist;
 
-        protected:
-            TruncatorPtr truncator;
-            WeighterPtr weighter;
-            float carvingDist;
-            bool enableVoxelCarving;
-            Vec3List centroids;
-    };
+          if (std::abs(surfaceDist) < truncation + resolutionDiagonal)
+            {
+              Vec3 voxelCenterInColorCamera = colorCameraPose.linear().transpose() * (voxelCenter - colorCameraPose.translation());
+              Vec3 colorCameraPos = colorCamera.ProjectPoint(voxelCenterInColorCamera);
+              if(colorCamera.IsPointOnImage(colorCameraPos))
+                {
+                  ColorVoxel& colorVoxel = chunk->GetColorVoxelMutable(i);
+
+                  if (colorVoxel.GetWeight() < 5)
+                    {
+                      int r = static_cast<int>(colorCameraPos(1));
+                      int c = static_cast<int>(colorCameraPos(0));
+                      colorImage->At(r, c, &color);
+
+                      colorVoxel.Integrate(color.blue, color.green, color.red, 1);
+                    }
+                }
+
+              DistVoxel& voxel = chunk->GetDistVoxelMutable(i);
+              voxel.Integrate(surfaceDist, weighter->GetWeight(surfaceDist, truncation));
+
+              updated = true;
+            }
+          else if (enableVoxelCarving && surfaceDist > truncation + carvingDist)
+            {
+              DistVoxel& voxel = chunk->GetDistVoxelMutable(i);
+              if (voxel.GetWeight() > 0 && voxel.GetSDF() < 1e-5)
+                {
+                  voxel.Carve();
+                  updated = true;
+                }
+            }
+
+
+        }
+      //);
+
+      return updated;
+    }
+
+    inline const TruncatorPtr& GetTruncator() { return truncator; }
+    inline void SetTruncator(const TruncatorPtr& value) { truncator = value; }
+    inline const WeighterPtr& GetWeighter() { return weighter; }
+    inline void SetWeighter(const WeighterPtr& value) { weighter = value; }
+
+    inline float GetCarvingDist() { return carvingDist; }
+    inline bool IsCarvingEnabled() { return enableVoxelCarving; }
+    inline void SetCarvingDist(float dist) { carvingDist = dist; }
+    inline void SetCarvingEnabled(bool enabled) { enableVoxelCarving = enabled; }
+
+    inline void SetCentroids(const Vec3List& c) { centroids = c; }
+
+  protected:
+    TruncatorPtr truncator;
+    WeighterPtr weighter;
+    float carvingDist;
+    bool enableVoxelCarving;
+    Vec3List centroids;
+  };
 
 } // namespace chisel 
 
