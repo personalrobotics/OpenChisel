@@ -127,9 +127,12 @@ int main(int argc, char** argv)
     server->SetupMeshPublisher(meshTopic);
     server->SetupChunkBoxPublisher(chunkBoxTopic);
     ROS_INFO("Beginning to loop.");
+
+    ros::Rate loop_rate(100);
+
     while (ros::ok())
     {
-        ros::Rate loop_rate(100);
+        loop_rate.sleep();
         ros::spinOnce();
 
         if(!server->IsPaused() && server->HasNewData())
