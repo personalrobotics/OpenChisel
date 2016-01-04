@@ -46,7 +46,7 @@ namespace chisel
             inline void SetChunkManager(const ChunkManager& manager) { chunkManager = manager; }
 
             void IntegratePointCloud(const ProjectionIntegrator& integrator, const PointCloud& cloud, const Transform& extrinsic, float truncation, float maxDist);
-            void IntegrateChunks(const ProjectionIntegrator& integrator, std::vector<chisel::Chunk>& chunks);
+            void IntegrateChunks(const ProjectionIntegrator& integrator, std::vector<ChunkPtr> &chunks);
 
 
             template <class DataType> void IntegrateDepthScan(const ProjectionIntegrator& integrator, const std::shared_ptr<const DepthImage<DataType> >& depthImage, const Transform& extrinsic, const PinholeCamera& camera)
@@ -62,8 +62,8 @@ namespace chisel
 
                     std::mutex mutex;
                     ChunkIDList garbageChunks;
-                    for(const ChunkID& chunkID : chunksIntersecting)
-                //    parallel_for(chunksIntersecting.begin(), chunksIntersecting.end(), [&](const ChunkID& chunkID)
+                    //for(const ChunkID& chunkID : chunksIntersecting)
+                    parallel_for(chunksIntersecting.begin(), chunksIntersecting.end(), [&](const ChunkID& chunkID)
                     {
                         bool chunkNew = false;
 
@@ -99,7 +99,7 @@ namespace chisel
                         }
                         mutex.unlock();
                     }
-                    //);
+                    );
                     printf("CHISEL: Done with scan\n");
                     GarbageCollect(garbageChunks);
                     //chunkManager.PrintMemoryStatistics();
@@ -179,6 +179,9 @@ namespace chisel
         protected:
             ChunkManager chunkManager;
             ChunkSet meshesToUpdate;
+        private:
+            Point3 getVoxelCoordinates(VoxelID id, Eigen::Vector3i chunkSize);
+
 
     };
     typedef std::shared_ptr<Chisel> ChiselPtr;

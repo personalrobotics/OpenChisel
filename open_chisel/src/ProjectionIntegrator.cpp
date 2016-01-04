@@ -125,7 +125,7 @@ namespace chisel
     Transform inversePose = cameraPose.inverse();
     for (const Vec3& point : cloud.GetPoints())
       {
-        //TODO const Vec3& color = cloud.GetColors()[i];
+        const Vec3& color = cloud.GetColors()[i];
         Vec3 worldPoint = cameraPose * point;
         float depth = point.z();
         Vec3 dir = (worldPoint - startCamera).normalized();
@@ -144,7 +144,7 @@ namespace chisel
         for (const Point3& voxelCoords : raycastVoxels)
           {
             VoxelID id = chunk->GetVoxelID(voxelCoords);
-            //TODO ColorVoxel& voxel = chunk->GetColorVoxelMutable(id);
+            ColorVoxel& voxel = chunk->GetColorVoxelMutable(id);
             DistVoxel& distVoxel = chunk->GetDistVoxelMutable(id);
             const Vec3& centroid = centroids[id] + chunk->GetOrigin();
             float u = depth - (inversePose * centroid - startCamera).z();
@@ -152,7 +152,7 @@ namespace chisel
             if (fabs(u) < truncation)
               {
                 distVoxel.Integrate(u, weight);
-                //TODO voxel.Integrate((uint8_t)(color.x() * 255.0f), (uint8_t)(color.y() * 255.0f), (uint8_t)(color.z() * 255.0f), 1);
+                voxel.Integrate((uint8_t)(color.x() * 255.0f), (uint8_t)(color.y() * 255.0f), (uint8_t)(color.z() * 255.0f), 1);
                 updated = true;
               }
             else if (enableVoxelCarving && u > truncation + carvingDist)
@@ -170,68 +170,33 @@ namespace chisel
     return updated;
   }
 
-  bool ProjectionIntegrator::IntegrateChunk(Chunk& chunkToIntegrate, Chunk* chunk) const{
+  bool ProjectionIntegrator::IntegrateChunk(Chunk* chunkToIntegrate, Chunk* chunk) const{
 
-    assert(chunk != nullptr);
+    assert(chunk != nullptr && chunkToIntegrate != nullptr);
 
-    Eigen::Vector3i numVoxels = chunk->GetNumVoxels();
-    float resolution = chunk->GetVoxelResolutionMeters();
-    Vec3 origin = chunk->GetOrigin();
-    float diag = 2.0 * sqrt(3.0f) * resolution;
-    Vec3 voxelCenter;
     bool updated = false;
+
     for (size_t i = 0; i < centroids.size(); i++)
-      {
-        /* voxelCenter = centroids[i] + origin;
-            Vec3 voxelCenterInCamera = cameraPose.linear().transpose() * (voxelCenter - cameraPose.translation());
-            Vec3 cameraPos = camera.ProjectPoint(voxelCenterInCamera);
-
-            if (!camera.IsPointOnImage(cameraPos) || voxelCenterInCamera.z() < 0)
-                continue;
-
-            float voxelDist = voxelCenterInCamera.z();
-            float depth = depthImage->DepthAt((int)cameraPos(1), (int)cameraPos(0)); //depthImage->BilinearInterpolateDepth(cameraPos(0), cameraPos(1));
-            */
-        /*if(std::isnan(depth))
-            {
-                continue;
-            }
-*/
-        /* float truncation = truncator->GetTruncationDistance(depth);
-            float surfaceDist = depth - voxelDist;
-
-            if (fabs(surfaceDist) < truncation + diag)
-            {*/
+    {
         DistVoxel& voxel = chunk->GetDistVoxelMutable(i);
-        DistVoxel voxelToIntegrate = chunkToIntegrate.GetDistVoxelMutable(i);
+        DistVoxel voxelToIntegrate = chunkToIntegrate->GetDistVoxel(i);
 
-        /* if (voxelToIntegrate.GetWeight() > 0 && voxelToIntegrate.GetSDF() > 1e-4){*/
-        voxel.Integrate(voxelToIntegrate.GetSDF(), voxelToIntegrate.GetWeight());
-        updated = true;
-        //  }
+        if (voxelToIntegrate.GetWeight() > 0 && voxelToIntegrate.GetSDF() <99999)
+        {
+          voxel.Integrate(voxelToIntegrate.GetSDF(), voxelToIntegrate.GetWeight());
+          updated = true;
+        }
 
-        /* if (voxelToIntegrate.GetWeight() > 0 && voxelToIntegrate.GetSDF() < 1e-5)
-                {
-                    voxel.Carve();
-                    updated = true;
-                }*/
-        /* }
-            else if (enableVoxelCarving && surfaceDist > truncation + carvingDist)
-            {
-                DistVoxel& voxel = chunk->GetDistVoxelMutable(i);
-                if (voxel.GetWeight() > 0 && voxel.GetSDF() < 1e-5)
-                {
-                    voxel.Carve();
-                    updated = true;
-                }
-            }*/
-
-
-      }
+        if(enableVoxelCarving)
+        {
+          if (voxel.GetWeight() > 0 && voxel.GetSDF() < 1e-5)
+          {
+            voxel.Carve();
+            updated = true;
+          }
+        }
+    }
     return updated;
-
-
-    return true;
   }
 
 

@@ -47,7 +47,7 @@ namespace chisel
     bool Integrate(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk) const;
     bool IntegratePointCloud(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk) const;
     bool IntegrateColorPointCloud(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk) const;
-    bool IntegrateChunk(Chunk &chunkToIntegrate, /* const Transform& cameraPose,*/ Chunk* chunk) const;
+    bool IntegrateChunk(Chunk* chunkToIntegrate, Chunk* chunk) const;
 
     template<class DataType> bool Integrate(const std::shared_ptr<const DepthImage<DataType> >& depthImage, const PinholeCamera& camera, const Transform& cameraPose, Chunk* chunk) const
     {
@@ -116,7 +116,7 @@ namespace chisel
 
 
       for (size_t i = 0; i < centroids.size(); i++)
-        //parallel_for(indexes.begin(), indexes.end(), [&](const size_t& i)
+       // parallel_for(indexes.begin(), indexes.end(), [&](const size_t& i)
         {
           Color<ColorType> color;
           Vec3 voxelCenter = centroids[i] + origin;
@@ -174,7 +174,7 @@ namespace chisel
 
 
         }
-      //);
+     // );
 
       return updated;
     }
