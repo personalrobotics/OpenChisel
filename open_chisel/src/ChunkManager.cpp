@@ -545,6 +545,21 @@ namespace chisel
         else return nullptr;
     }
 
+    DistVoxel* ChunkManager::GetDistanceVoxelMutable(const Vec3& pos)
+    {
+        ChunkPtr chunk = GetChunkAt(pos);
+
+        if(chunk.get())
+        {
+            Vec3 rel = (pos - chunk->GetOrigin());
+            return &(chunk->GetDistVoxelMutable(chunk->GetVoxelID(rel)));
+        }
+        else return nullptr;
+    }
+
+
+
+
     const ColorVoxel* ChunkManager::GetColorVoxel(const Vec3& pos)
     {
         ChunkPtr chunk = GetChunkAt(pos);
