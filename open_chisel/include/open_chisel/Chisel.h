@@ -174,10 +174,12 @@ namespace chisel
             void Reset();
 
             const ChunkSet& GetMeshesToUpdate() const { return meshesToUpdate; }
+            const ChunkSet& GetLatestChunks() const {return latestChunks;}
 
         protected:
             ChunkManager chunkManager;
             ChunkSet meshesToUpdate;
+            ChunkSet latestChunks;
         private:
             Point3 getVoxelCoordinates(VoxelID id, Eigen::Vector3i chunkSize);
             bool interpolateDistVoxel(const Vec3& voxelPos, ChunkManager& sourceChunkManager, DistVoxel* voxel);

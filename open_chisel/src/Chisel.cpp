@@ -49,7 +49,17 @@ namespace chisel
 
   void Chisel::UpdateMeshes()
   {
-    chunkManager.RecomputeMeshes(meshesToUpdate);
+    latestChunks = meshesToUpdate;
+
+    for(auto iter=latestChunks.begin(); iter!=latestChunks.end(); iter++)
+    {
+      if(!iter->second)
+      {
+        latestChunks.erase(iter);
+      }
+    }
+
+    chunkManager.RecomputeMeshes(latestChunks);
     meshesToUpdate.clear();
   }
 
