@@ -137,12 +137,12 @@ namespace chisel
         }
 
         std::mutex mutex;
-        for (const std::pair<ChunkID, ChunkPtr>& chunkID : chunks)
-        //parallel_for(chunks.begin(), chunks.end(), [this, &mutex](const ChunkID& chunkID)
-        {
-            this->RecomptueMesh(ChunkID(chunkID.first), mutex);
-        }
 
+        for(auto iter=chunkMeshes.begin(); iter!=chunkMeshes.end(); iter++)
+        //parallel_for(chunkMeshes.begin(), chunkMeshes.end(), [this, &mutex](const std::pair<ChunkID, bool>& iter)
+        {
+            this->RecomptueMesh(ChunkID(iter->first), mutex);
+        }
     }
 
     void ChunkManager::CreateChunk(const ChunkID& id)
