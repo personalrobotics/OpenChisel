@@ -84,6 +84,12 @@ namespace chisel_ros
                     | static_cast<uint32_t>(voxel.GetBlue())   << 3 * sizeof(uint8_t)
                     | static_cast<uint32_t>(voxel.GetWeight()) << 4 * sizeof(uint8_t)
             );
+
+            message->red.push_back(voxel.GetRed());
+            message->blue.push_back(voxel.GetBlue());
+            message->green.push_back(voxel.GetGreen());
+            message->color_weight.push_back(voxel.GetWeight());
+
         }
 
     }
