@@ -176,8 +176,8 @@ namespace chisel
     Eigen::Vector3i mapChunksize = GetChunkManager().GetChunkSize();
     Eigen::Vector3i chunkChunksize = sourceChunkManager.GetChunkSize();
 
-    const bool color = sourceChunkManager.GetUseColor();
-    ChunkManager tempTargetChunkManager(mapChunksize, mapResolution, color);
+    const bool useColor = sourceChunkManager.GetUseColor();
+    ChunkManager tempTargetChunkManager(mapChunksize, mapResolution, useColor);
 
     if(std::fabs(mapResolution - chunkResolution) < 0.0001 && mapChunksize == chunkChunksize)
     {
@@ -240,7 +240,6 @@ namespace chisel
 
           for (int i = 0; i < c.second->GetTotalNumVoxels(); i++)
           {
-            DistVoxel distVoxel = c.second->GetDistVoxelMutable(i);
             Vec3 worldPosition = c.second->GetOrigin() + chunkResolution * getVoxelCoordinates(i, chunkChunksize).cast<float>();
             ChunkID chunkID = tempTargetChunkManager.GetIDAt(worldPosition);
 
@@ -265,12 +264,22 @@ namespace chisel
             if (voxelID >= 0 && voxelID < chunk->GetTotalNumVoxels())
             {
               //Apply the old data to the fitting voxel
+              DistVoxel distVoxel = c.second->GetDistVoxel(i);
               chunk->GetDistVoxelMutable(voxelID).SetSDF(distVoxel.GetSDF());
               chunk->GetDistVoxelMutable(voxelID).SetWeight(distVoxel.GetWeight());
+
+              if (useColor)
+              {
+                ColorVoxel colorVoxel = c.second->GetColorVoxel(i);
+                chunk->GetColorVoxelMutable(voxelID).SetRed(colorVoxel.GetRed());
+                chunk->GetColorVoxelMutable(voxelID).SetGreen(colorVoxel.GetGreen());
+                chunk->GetColorVoxelMutable(voxelID).SetBlue(colorVoxel.GetBlue());
+                chunk->GetColorVoxelMutable(voxelID).SetWeight(colorVoxel.GetWeight());
+              }
             }
             else
             {
-              fprintf(stderr," \n Number of voxel: %d from %d total voxels in this chunk \n", i, (int) c.second->GetTotalNumVoxels());
+              fprintf(stderr," \n Number of voxel: %d from %dvoxelPos total voxels in this chunk \n", i, (int) c.second->GetTotalNumVoxels());
               fprintf(stderr,"ChunkID %d %d %d and Worldposition %.16f %.16f %.16f \n", chunkID(0),chunkID(1),chunkID(2), worldPosition(0), worldPosition(1), worldPosition(2) );
               fprintf(stderr,"VoxelID %d", voxelID);
               Point3 p = chunk->GetVoxelCoords(relPosition);
@@ -310,7 +319,12 @@ namespace chisel
         ChunkPtr chunk = chunkManager.GetChunk(chunkID);
         mutex.unlock();
 
-        bool needsUpdate = integrator.IntegrateChunk(chunksToIntegrate.at(i).get(), chunk.get());
+        bool needsUpdate = false;
+
+        if(useColor)
+          needsUpdate = integrator.IntegrateColorChunk(chunksToIntegrate.at(i).get(), chunk.get());
+        else
+          needsUpdate = integrator.IntegrateChunk(chunksToIntegrate.at(i).get(), chunk.get());
 
         mutex.lock();
         if (needsUpdate)

@@ -170,7 +170,7 @@ namespace chisel
     return updated;
   }
 
-  bool ProjectionIntegrator::IntegrateChunk(Chunk* chunkToIntegrate, Chunk* chunk) const{
+  bool ProjectionIntegrator::IntegrateChunk(const Chunk* chunkToIntegrate, Chunk* chunk) const{
 
     assert(chunk != nullptr && chunkToIntegrate != nullptr);
 
@@ -192,6 +192,40 @@ namespace chisel
           if (voxel.GetWeight() > 0 && voxel.GetSDF() < 1e-5)
           {
             voxel.Carve();
+            updated = true;
+          }
+        }
+    }
+    return updated;
+  }
+
+  bool ProjectionIntegrator::IntegrateColorChunk(const Chunk* chunkToIntegrate, Chunk* chunk) const{
+
+    assert(chunk != nullptr && chunkToIntegrate != nullptr);
+
+    bool updated = false;
+
+    for (size_t i = 0; i < centroids.size(); i++)
+    {
+        DistVoxel& distVoxel = chunk->GetDistVoxelMutable(i);
+        ColorVoxel& colorVoxel = chunk->GetColorVoxelMutable(i);
+
+        DistVoxel distVoxelToIntegrate = chunkToIntegrate->GetDistVoxel(i);
+        ColorVoxel colorVoxelToIntegrate = chunkToIntegrate->GetColorVoxel(i);
+
+        if (distVoxelToIntegrate.GetWeight() > 0 && distVoxelToIntegrate.GetSDF() <99999)
+        {
+          distVoxel.Integrate(distVoxelToIntegrate.GetSDF(), distVoxelToIntegrate.GetWeight());
+          colorVoxel.Integrate((uint8_t) colorVoxelToIntegrate.GetRed(), (uint8_t) colorVoxelToIntegrate.GetGreen(), (uint8_t)  colorVoxelToIntegrate.GetBlue(), (uint8_t) colorVoxelToIntegrate.GetWeight());
+          updated = true;
+        }
+
+        if(enableVoxelCarving)
+        {
+          if (distVoxel.GetWeight() > 0 && distVoxel.GetSDF() < 1e-5)
+          {
+            distVoxel.Carve();
+            colorVoxel.Reset();
             updated = true;
           }
         }

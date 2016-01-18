@@ -47,7 +47,9 @@ namespace chisel
     bool Integrate(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk) const;
     bool IntegratePointCloud(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk) const;
     bool IntegrateColorPointCloud(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk) const;
-    bool IntegrateChunk(Chunk* chunkToIntegrate, Chunk* chunk) const;
+    bool IntegrateChunk(const Chunk* chunkToIntegrate, Chunk* chunk) const;
+    bool IntegrateColorChunk(const Chunk* chunkToIntegrate, Chunk* chunk) const;
+
 
     template<class DataType> bool Integrate(const std::shared_ptr<const DepthImage<DataType> >& depthImage, const PinholeCamera& camera, const Transform& cameraPose, Chunk* chunk) const
     {
