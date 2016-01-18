@@ -48,6 +48,9 @@ namespace chisel_ros
         message->num_voxels_z = size.z();
 
         message->distance_data.reserve(chunk->GetTotalNumVoxels());
+        message->sdf.reserve(chunk->GetTotalNumVoxels());
+        message->weights.reserve(chunk->GetTotalNumVoxels());
+
 
         if(chunk->HasColors())
         {
@@ -65,6 +68,8 @@ namespace chisel_ros
                     *(reinterpret_cast<uint32_t*>(&sdf))
                   | *(reinterpret_cast<uint32_t*>(&weight)) << sizeof(uint32_t)
             );
+            message->sdf.push_back(sdf);
+            message->weights.push_back(weight);
         }
 
         const std::vector<chisel::ColorVoxel>& colors = chunk->GetColorVoxels();
@@ -79,6 +84,12 @@ namespace chisel_ros
                     | static_cast<uint32_t>(voxel.GetBlue())   << 3 * sizeof(uint8_t)
                     | static_cast<uint32_t>(voxel.GetWeight()) << 4 * sizeof(uint8_t)
             );
+
+            message->red.push_back(voxel.GetRed());
+            message->blue.push_back(voxel.GetBlue());
+            message->green.push_back(voxel.GetGreen());
+            message->color_weight.push_back(voxel.GetWeight());
+
         }
 
     }

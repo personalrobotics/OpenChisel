@@ -7,10 +7,14 @@ find_package(cmake_modules REQUIRED)
 find_package(Eigen REQUIRED)
 include_directories(${Eigen_INCLUDE_DIRS})
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++0x")
+SET(CMAKE_BUILD_TYPE Release)
+
+file(GLOB_RECURSE HEADER_FILES include/*.h)
 
 include_directories(include)
 
 add_library(${PROJECT_NAME} 
+	${HEADER_FILES}
 	src/Chunk.cpp 
 	src/ChunkManager.cpp 
 	src/DistVoxel.cpp  

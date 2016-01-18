@@ -25,154 +25,218 @@
 namespace chisel
 {
 
-    ProjectionIntegrator::ProjectionIntegrator()
-    {
-        // TODO Auto-generated constructor stub
+  ProjectionIntegrator::ProjectionIntegrator()
+  {
+    // TODO Auto-generated constructor stub
 
-    }
+  }
 
-    ProjectionIntegrator::ProjectionIntegrator(const TruncatorPtr& t, const WeighterPtr& w, float crvDist, bool enableCrv, const Vec3List& centers) :
-            truncator(t), weighter(w), carvingDist(crvDist), enableVoxelCarving(enableCrv), centroids(centers)
-    {
+  ProjectionIntegrator::ProjectionIntegrator(const TruncatorPtr& t, const WeighterPtr& w, float crvDist, bool enableCrv, const Vec3List& centers) :
+    truncator(t), weighter(w), carvingDist(crvDist), enableVoxelCarving(enableCrv), centroids(centers)
+  {
 
-    }
+  }
 
-    bool ProjectionIntegrator::Integrate(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk) const
-    {
-        assert(!!chunk);
+  bool ProjectionIntegrator::Integrate(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk) const
+  {
+    assert(!!chunk);
 
-        if(cloud.HasColor() && chunk->HasColors())
-        {
-            return IntegrateColorPointCloud(cloud, cameraPose, chunk);
-        }
-        else
-        {
-            return IntegratePointCloud(cloud, cameraPose, chunk);
-        }
-    }
+    if(cloud.HasColor() && chunk->HasColors())
+      {
+        return IntegrateColorPointCloud(cloud, cameraPose, chunk);
+      }
+    else
+      {
+        return IntegratePointCloud(cloud, cameraPose, chunk);
+      }
+  }
 
 
-    bool ProjectionIntegrator::IntegratePointCloud(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk) const
-    {
-        const float roundX = 1.0f / chunk->GetVoxelResolutionMeters();
-        const float roundY = 1.0f / chunk->GetVoxelResolutionMeters();
-        const float roundZ = 1.0f / chunk->GetVoxelResolutionMeters();
+  bool ProjectionIntegrator::IntegratePointCloud(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk) const
+  {
+    const float roundX = 1.0f / chunk->GetVoxelResolutionMeters();
+    const float roundY = 1.0f / chunk->GetVoxelResolutionMeters();
+    const float roundZ = 1.0f / chunk->GetVoxelResolutionMeters();
 
-        Point3List raycastVoxels;
-        Point3 chunkMin = Point3::Zero();
-        Point3 chunkMax = chunk->GetNumVoxels();
-        bool updated = false;
-        size_t i = 0;
-        Vec3 startCamera = cameraPose.translation();
-        Transform inversePose = cameraPose.inverse();
-        for (const Vec3& point : cloud.GetPoints())
-        {
-            const Vec3& color = cloud.GetColors()[i];
-            Vec3 worldPoint = cameraPose * point;
-            float depth = point.z();
-            Vec3 dir = (worldPoint - startCamera).normalized();
-            float truncation = truncator->GetTruncationDistance(depth);
-            Vec3 start = worldPoint - dir * truncation - chunk->GetOrigin();
-            Vec3 end = worldPoint + dir * truncation - chunk->GetOrigin();
-            start.x() *= roundX;
-            start.y() *= roundY;
-            start.z() *= roundZ;
-            end.x() *= roundX;
-            end.y() *= roundY;
-            end.z() *= roundZ;
-            raycastVoxels.clear();
-            Raycast(start, end, chunkMin, chunkMax, &raycastVoxels);
+    Point3List raycastVoxels;
+    Point3 chunkMin = Point3::Zero();
+    Point3 chunkMax = chunk->GetNumVoxels();
+    bool updated = false;
+    size_t i = 0;
+    Vec3 startCamera = cameraPose.translation();
+    Transform inversePose = cameraPose.inverse();
+    for (const Vec3& point : cloud.GetPoints())
+      {
+        const Vec3& color = cloud.GetColors()[i];
+        Vec3 worldPoint = cameraPose * point;
+        float depth = point.z();
+        Vec3 dir = (worldPoint - startCamera).normalized();
+        float truncation = truncator->GetTruncationDistance(depth);
+        Vec3 start = worldPoint - dir * truncation - chunk->GetOrigin();
+        Vec3 end = worldPoint + dir * truncation - chunk->GetOrigin();
+        start.x() *= roundX;
+        start.y() *= roundY;
+        start.z() *= roundZ;
+        end.x() *= roundX;
+        end.y() *= roundY;
+        end.z() *= roundZ;
+        raycastVoxels.clear();
+        Raycast(start, end, chunkMin, chunkMax, &raycastVoxels);
 
-            for (const Point3& voxelCoords : raycastVoxels)
-            {
-                VoxelID id = chunk->GetVoxelID(voxelCoords);
-                DistVoxel& distVoxel = chunk->GetDistVoxelMutable(id);
-                const Vec3& centroid = centroids[id] + chunk->GetOrigin();
-                float u = depth - (inversePose * centroid - startCamera).z();
-                float weight = weighter->GetWeight(u, truncation);
-                if (fabs(u) < truncation)
-                {
-                    distVoxel.Integrate(u, weight);
+        for (const Point3& voxelCoords : raycastVoxels)
+          {
+            VoxelID id = chunk->GetVoxelID(voxelCoords);
+            DistVoxel& distVoxel = chunk->GetDistVoxelMutable(id);
+            const Vec3& centroid = centroids[id] + chunk->GetOrigin();
+            float u = depth - (inversePose * centroid - startCamera).z();
+            float weight = weighter->GetWeight(u, truncation);
+            if (fabs(u) < truncation)
+              {
+                distVoxel.Integrate(u, weight);
+                updated = true;
+              }
+            else if (enableVoxelCarving && u > truncation + carvingDist)
+              {
+                if (distVoxel.GetWeight() > 0)
+                  {
+                    distVoxel.Integrate(1.0e-5, 5.0f);
                     updated = true;
-                }
-                else if (enableVoxelCarving && u > truncation + carvingDist)
-                {
-                    if (distVoxel.GetWeight() > 0)
-                    {
-                        distVoxel.Integrate(1.0e-5, 5.0f);
-                        updated = true;
-                    }
-                }
-            }
-            i++;
+                  }
+              }
+          }
+        i++;
 
-        }
-        return updated;
-    }
+      }
+    return updated;
+  }
 
-    bool ProjectionIntegrator::IntegrateColorPointCloud(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk) const
-    {
-        const float roundX = 1.0f / chunk->GetVoxelResolutionMeters();
-        const float roundY = 1.0f / chunk->GetVoxelResolutionMeters();
-        const float roundZ = 1.0f / chunk->GetVoxelResolutionMeters();
+  bool ProjectionIntegrator::IntegrateColorPointCloud(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk) const
+  {
+    const float roundX = 1.0f / chunk->GetVoxelResolutionMeters();
+    const float roundY = 1.0f / chunk->GetVoxelResolutionMeters();
+    const float roundZ = 1.0f / chunk->GetVoxelResolutionMeters();
 
-        Point3List raycastVoxels;
-        Point3 chunkMin = Point3::Zero();
-        Point3 chunkMax = chunk->GetNumVoxels();
-        bool updated = false;
-        size_t i = 0;
-        Vec3 startCamera = cameraPose.translation();
-        Transform inversePose = cameraPose.inverse();
-        for (const Vec3& point : cloud.GetPoints())
-        {
-            const Vec3& color = cloud.GetColors()[i];
-            Vec3 worldPoint = cameraPose * point;
-            float depth = point.z();
-            Vec3 dir = (worldPoint - startCamera).normalized();
-            float truncation = truncator->GetTruncationDistance(depth);
-            Vec3 start = worldPoint - dir * truncation - chunk->GetOrigin();
-            Vec3 end = worldPoint + dir * truncation - chunk->GetOrigin();
-            start.x() *= roundX;
-            start.y() *= roundY;
-            start.z() *= roundZ;
-            end.x() *= roundX;
-            end.y() *= roundY;
-            end.z() *= roundZ;
-            raycastVoxels.clear();
-            Raycast(start, end, chunkMin, chunkMax, &raycastVoxels);
+    Point3List raycastVoxels;
+    Point3 chunkMin = Point3::Zero();
+    Point3 chunkMax = chunk->GetNumVoxels();
+    bool updated = false;
+    size_t i = 0;
+    Vec3 startCamera = cameraPose.translation();
+    Transform inversePose = cameraPose.inverse();
+    for (const Vec3& point : cloud.GetPoints())
+      {
+        const Vec3& color = cloud.GetColors()[i];
+        Vec3 worldPoint = cameraPose * point;
+        float depth = point.z();
+        Vec3 dir = (worldPoint - startCamera).normalized();
+        float truncation = truncator->GetTruncationDistance(depth);
+        Vec3 start = worldPoint - dir * truncation - chunk->GetOrigin();
+        Vec3 end = worldPoint + dir * truncation - chunk->GetOrigin();
+        start.x() *= roundX;
+        start.y() *= roundY;
+        start.z() *= roundZ;
+        end.x() *= roundX;
+        end.y() *= roundY;
+        end.z() *= roundZ;
+        raycastVoxels.clear();
+        Raycast(start, end, chunkMin, chunkMax, &raycastVoxels);
 
-            for (const Point3& voxelCoords : raycastVoxels)
-            {
-                VoxelID id = chunk->GetVoxelID(voxelCoords);
-                ColorVoxel& voxel = chunk->GetColorVoxelMutable(id);
-                DistVoxel& distVoxel = chunk->GetDistVoxelMutable(id);
-                const Vec3& centroid = centroids[id] + chunk->GetOrigin();
-                float u = depth - (inversePose * centroid - startCamera).z();
-                float weight = weighter->GetWeight(u, truncation);
-                if (fabs(u) < truncation)
-                {
-                    distVoxel.Integrate(u, weight);
-                    voxel.Integrate((uint8_t)(color.x() * 255.0f), (uint8_t)(color.y() * 255.0f), (uint8_t)(color.z() * 255.0f), 1);
+        for (const Point3& voxelCoords : raycastVoxels)
+          {
+            VoxelID id = chunk->GetVoxelID(voxelCoords);
+            ColorVoxel& voxel = chunk->GetColorVoxelMutable(id);
+            DistVoxel& distVoxel = chunk->GetDistVoxelMutable(id);
+            const Vec3& centroid = centroids[id] + chunk->GetOrigin();
+            float u = depth - (inversePose * centroid - startCamera).z();
+            float weight = weighter->GetWeight(u, truncation);
+            if (fabs(u) < truncation)
+              {
+                distVoxel.Integrate(u, weight);
+                voxel.Integrate((uint8_t)(color.x() * 255.0f), (uint8_t)(color.y() * 255.0f), (uint8_t)(color.z() * 255.0f), 1);
+                updated = true;
+              }
+            else if (enableVoxelCarving && u > truncation + carvingDist)
+              {
+                if (distVoxel.GetWeight() > 0)
+                  {
+                    distVoxel.Integrate(1.0e-5, 5.0f);
                     updated = true;
-                }
-                else if (enableVoxelCarving && u > truncation + carvingDist)
-                {
-                    if (distVoxel.GetWeight() > 0)
-                    {
-                        distVoxel.Integrate(1.0e-5, 5.0f);
-                        updated = true;
-                    }
-                }
-            }
-            i++;
+                  }
+              }
+          }
+        i++;
 
-        }
-        return updated;
-    }
+      }
+    return updated;
+  }
 
-    ProjectionIntegrator::~ProjectionIntegrator()
+  bool ProjectionIntegrator::IntegrateChunk(const Chunk* chunkToIntegrate, Chunk* chunk) const{
+
+    assert(chunk != nullptr && chunkToIntegrate != nullptr);
+
+    bool updated = false;
+
+    for (size_t i = 0; i < centroids.size(); i++)
     {
-        // TODO Auto-generated destructor stub
+        DistVoxel& voxel = chunk->GetDistVoxelMutable(i);
+        DistVoxel voxelToIntegrate = chunkToIntegrate->GetDistVoxel(i);
+
+        if (voxelToIntegrate.GetWeight() > 0 && voxelToIntegrate.GetSDF() <99999)
+        {
+          voxel.Integrate(voxelToIntegrate.GetSDF(), voxelToIntegrate.GetWeight());
+          updated = true;
+        }
+
+        if(enableVoxelCarving)
+        {
+          if (voxel.GetWeight() > 0 && voxel.GetSDF() < 1e-5)
+          {
+            voxel.Carve();
+            updated = true;
+          }
+        }
     }
+    return updated;
+  }
+
+  bool ProjectionIntegrator::IntegrateColorChunk(const Chunk* chunkToIntegrate, Chunk* chunk) const{
+
+    assert(chunk != nullptr && chunkToIntegrate != nullptr);
+
+    bool updated = false;
+
+    for (size_t i = 0; i < centroids.size(); i++)
+    {
+        DistVoxel& distVoxel = chunk->GetDistVoxelMutable(i);
+        ColorVoxel& colorVoxel = chunk->GetColorVoxelMutable(i);
+
+        DistVoxel distVoxelToIntegrate = chunkToIntegrate->GetDistVoxel(i);
+        ColorVoxel colorVoxelToIntegrate = chunkToIntegrate->GetColorVoxel(i);
+
+        if (distVoxelToIntegrate.GetWeight() > 0 && distVoxelToIntegrate.GetSDF() <99999)
+        {
+          distVoxel.Integrate(distVoxelToIntegrate.GetSDF(), distVoxelToIntegrate.GetWeight());
+          colorVoxel.Integrate((uint8_t) colorVoxelToIntegrate.GetRed(), (uint8_t) colorVoxelToIntegrate.GetGreen(), (uint8_t)  colorVoxelToIntegrate.GetBlue(), (uint8_t) colorVoxelToIntegrate.GetWeight());
+          updated = true;
+        }
+
+        if(enableVoxelCarving)
+        {
+          if (distVoxel.GetWeight() > 0 && distVoxel.GetSDF() < 1e-5)
+          {
+            distVoxel.Carve();
+            colorVoxel.Reset();
+            updated = true;
+          }
+        }
+    }
+    return updated;
+  }
+
+
+  ProjectionIntegrator::~ProjectionIntegrator()
+  {
+    // TODO Auto-generated destructor stub
+  }
 
 } // namespace chisel 

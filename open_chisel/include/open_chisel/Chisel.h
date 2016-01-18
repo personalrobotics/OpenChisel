@@ -46,10 +46,13 @@ namespace chisel
             inline void SetChunkManager(const ChunkManager& manager) { chunkManager = manager; }
 
             void IntegratePointCloud(const ProjectionIntegrator& integrator, const PointCloud& cloud, const Transform& extrinsic, float truncation, float maxDist);
+            void IntegrateChunks(const ProjectionIntegrator& integrator, ChunkManager &sourceChunkManager);
 
             template <class DataType> void IntegrateDepthScan(const ProjectionIntegrator& integrator, const std::shared_ptr<const DepthImage<DataType> >& depthImage, const Transform& extrinsic, const PinholeCamera& camera)
             {
-                    printf("CHISEL: Integrating a scan\n");
+                clock_t begin = clock();
+                printf("CHISEL: Integrating a scan\n");
+
                     Frustum frustum;
                     camera.SetupFrustum(extrinsic, &frustum);
 
@@ -58,8 +61,8 @@ namespace chisel
 
                     std::mutex mutex;
                     ChunkIDList garbageChunks;
-                    for(const ChunkID& chunkID : chunksIntersecting)
-                    //parallel_for(chunksIntersecting.begin(), chunksIntersecting.end(), [&](const ChunkID& chunkID)
+                    //for(const ChunkID& chunkID : chunksIntersecting)
+                    parallel_for(chunksIntersecting.begin(), chunksIntersecting.end(), [&](const ChunkID& chunkID)
                     {
                         bool chunkNew = false;
 
@@ -95,14 +98,20 @@ namespace chisel
                         }
                         mutex.unlock();
                     }
-                    //);
+                    );
                     printf("CHISEL: Done with scan\n");
                     GarbageCollect(garbageChunks);
                     //chunkManager.PrintMemoryStatistics();
+
+                    clock_t end = clock();
+                    double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+                    printf("\n \n  ~ %f HZ     \n \n", 1/elapsed_secs);
             }
 
             template <class DataType, class ColorType> void IntegrateDepthScanColor(const ProjectionIntegrator& integrator, const std::shared_ptr<const DepthImage<DataType> >& depthImage,  const Transform& depthExtrinsic, const PinholeCamera& depthCamera, const std::shared_ptr<const ColorImage<ColorType> >& colorImage, const Transform& colorExtrinsic, const PinholeCamera& colorCamera)
             {
+                    clock_t begin = clock();
+
                     Frustum frustum;
                     depthCamera.SetupFrustum(depthExtrinsic, &frustum);
 
@@ -152,6 +161,9 @@ namespace chisel
                     );
 
                     GarbageCollect(garbageChunks);
+                    clock_t end = clock();
+                    double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+                    printf("\n \n  ~ %f HZ     \n \n", 1/elapsed_secs);
                     //chunkManager.PrintMemoryStatistics();
             }
 
@@ -162,10 +174,16 @@ namespace chisel
             void Reset();
 
             const ChunkSet& GetMeshesToUpdate() const { return meshesToUpdate; }
+            const ChunkSet& GetLatestChunks() const {return latestChunks;}
 
         protected:
             ChunkManager chunkManager;
             ChunkSet meshesToUpdate;
+            ChunkSet latestChunks;
+        private:
+            Point3 getVoxelCoordinates(VoxelID id, Eigen::Vector3i chunkSize);
+            bool interpolateDistVoxel(const Vec3& voxelPos, ChunkManager& sourceChunkManager, DistVoxel* voxel);
+
 
     };
     typedef std::shared_ptr<Chisel> ChiselPtr;

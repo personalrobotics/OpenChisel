@@ -83,11 +83,11 @@ namespace chisel
                         colorOut->blue = colorOut->green;
                         colorOut->alpha = colorOut->green;
                         break;
-                    // BGR
+                    // RBG
                     case 3:
-                        colorOut->red = data[index + 2];
+                        colorOut->red = data[index];
                         colorOut->green = data[index + 1];
-                        colorOut->blue = data[index];
+                        colorOut->blue = data[index + 2];
                         colorOut->alpha = colorOut->red;
                         break;
                    // BGRA

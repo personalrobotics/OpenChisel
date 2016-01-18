@@ -46,6 +46,7 @@ namespace chisel_ros
         pauseServer = nh.advertiseService("TogglePaused", &ChiselServer::TogglePaused, this);
         saveMeshServer = nh.advertiseService("SaveMesh", &ChiselServer::SaveMesh, this);
         getAllChunksServer = nh.advertiseService("GetAllChunks", &ChiselServer::GetAllChunks, this);
+        getLatestChunksServer = nh.advertiseService("GetLatestChunks", &ChiselServer::GetLatestChunks, this);
     }
 
     void ChiselServer::SetupMeshPublisher(const std::string& topic)
@@ -461,6 +462,7 @@ namespace chisel_ros
         marker.color.b = 0.3f;
         marker.color.a = 0.6f;
         const chisel::ChunkSet& latest = chiselMap->GetMeshesToUpdate();
+
         for (const std::pair<chisel::ChunkID, bool>& id : latest)
         {
             if(chunkManager.HasChunk(id.first))
@@ -613,6 +615,31 @@ namespace chisel_ros
             chisel_msgs::ChunkMessage& msg = response.chunks.chunks.at(i);
             FillChunkMessage(chunkPair.second, &msg);
             i++;
+        }
+
+        return true;
+    }
+
+    bool ChiselServer::GetLatestChunks(chisel_msgs::GetLatestChunksService::Request& request, chisel_msgs::GetLatestChunksService::Response& response)
+    {
+
+        const chisel::ChunkManager& chunkManager = chiselMap->GetChunkManager();
+        const chisel::ChunkSet& latestChunks = chiselMap->GetLatestChunks();
+
+        int i = 0;
+
+        response.chunks.chunks.resize(latestChunks.size());
+        response.chunks.header.stamp = ros::Time::now();
+
+        for (const std::pair<chisel::ChunkID, bool>& id : latestChunks)
+
+        {
+            if(chunkManager.HasChunk(id.first))
+            {
+              chisel_msgs::ChunkMessage& msg = response.chunks.chunks.at(i);
+              FillChunkMessage(chunkManager.GetChunk(id.first), &msg);
+              i++;
+            }
         }
 
         return true;

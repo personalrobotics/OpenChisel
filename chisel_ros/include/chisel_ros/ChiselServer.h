@@ -26,6 +26,7 @@
 #include <chisel_msgs/PauseService.h>
 #include <chisel_msgs/SaveMeshService.h>
 #include <chisel_msgs/GetAllChunksService.h>
+#include <chisel_msgs/GetLatestChunksService.h>
 
 #include <memory>
 #include <open_chisel/Chisel.h>
@@ -137,6 +138,7 @@ namespace chisel_ros
             bool TogglePaused(chisel_msgs::PauseService::Request& request, chisel_msgs::PauseService::Response& response);
             bool SaveMesh(chisel_msgs::SaveMeshService::Request& request, chisel_msgs::SaveMeshService::Response& response);
             bool GetAllChunks(chisel_msgs::GetAllChunksService::Request& request, chisel_msgs::GetAllChunksService::Response& response);
+            bool GetLatestChunks(chisel_msgs::GetLatestChunksService::Request& request, chisel_msgs::GetLatestChunksService::Response& response);
 
             inline bool IsPaused() { return isPaused; }
             inline void SetPaused(bool paused) { isPaused = paused; }
@@ -173,6 +175,8 @@ namespace chisel_ros
             ros::ServiceServer pauseServer;
             ros::ServiceServer saveMeshServer;
             ros::ServiceServer getAllChunksServer;
+            ros::ServiceServer getLatestChunksServer;
+
             RosCameraTopic depthCamera;
             RosCameraTopic colorCamera;
             RosPointCloudTopic pointcloudTopic;
@@ -182,6 +186,7 @@ namespace chisel_ros
             float farPlaneDist;
             bool isPaused;
             FusionMode mode;
+
     };
     typedef std::shared_ptr<ChiselServer> ChiselServerPtr;
     typedef std::shared_ptr<const ChiselServer> ChiselServerConstPtr;
