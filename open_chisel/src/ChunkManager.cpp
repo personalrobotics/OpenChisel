@@ -90,7 +90,7 @@ namespace chisel
     }
 
 
-    void ChunkManager::RecomptueMesh(const ChunkID& chunkID, std::mutex& mutex)
+    void ChunkManager::RecomputeMesh(const ChunkID& chunkID, std::mutex& mutex)
     {
         mutex.lock();
         if (!HasChunk(chunkID))
@@ -141,7 +141,7 @@ namespace chisel
         //parallel_for(chunks.begin(), chunks.end(), [this, &mutex](const ChunkID& chunkID)
         {
             if (chunk.second)
-              this->RecomptueMesh(ChunkID(chunk.first), mutex);
+              this->RecomputeMesh(ChunkID(chunk.first), mutex);
         }
 
     }
