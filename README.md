@@ -44,7 +44,12 @@ Unfortunately, PCL 1.7x (the standard PCL included in current versions of ROS) d
 1. Download PCL 1.8 from here: https://github.com/PointCloudLibrary/pcl
 2. Modify line 91 of `CMakeLists.txt` in PCL to say `SET(CMAKE_CXX_FLAGS "-Wall -std=c++11 ...`
 3. Build and install PCL 1.8
+4. Download `pcl_ros` from here: https://github.com/ros-perception/perception_pcl
+5. Change the dependency from `PCL` to `PCL 1.8` in `find_package` of the `CMakeLists.txt` 
+6. Compile `pcl_ros`.
 4. Rebuild Chisel
+
+If PCL does not gain `c++11` support by default soon, we may just get rid of `c++11` in `OpenChisel` and use `boost` instead.
 
 ###Launching chisel_ros Server
 
