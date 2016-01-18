@@ -113,13 +113,15 @@ namespace chisel
 
             inline ChunkID GetIDAt(const Vec3& pos) const
             {
-                static const float roundingFactorX = 1.0f / (chunkSize(0) * voxelResolutionMeters);
-                static const float roundingFactorY = 1.0f / (chunkSize(1) * voxelResolutionMeters);
-                static const float roundingFactorZ = 1.0f / (chunkSize(2) * voxelResolutionMeters);
+                float voxelResolution = std::round(this->voxelResolutionMeters*1000);
 
-                return ChunkID(static_cast<int>(std::floor(pos(0) * roundingFactorX)),
-                               static_cast<int>(std::floor(pos(1) * roundingFactorY)),
-                               static_cast<int>(std::floor(pos(2) * roundingFactorZ)));
+                float x = std::round(pos(0)*1000) / (voxelResolution * chunkSize(0));
+                float y = std::round(pos(1)*1000) / (voxelResolution * chunkSize(1));
+                float z = std::round(pos(2)*1000) / (voxelResolution * chunkSize(2));
+
+                return ChunkID(static_cast<int>(std::floor(x)),
+                               static_cast<int>(std::floor(y)),
+                               static_cast<int>(std::floor(z)));
             }
 
             const DistVoxel* GetDistanceVoxel(const Vec3& pos);
