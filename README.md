@@ -8,6 +8,9 @@ An open-source version of the Chisel chunked TSDF library. It contains two packa
 
 This reference implementation does not include any pose estimation. Therefore **the pose of the sensor must be provided from an external source**. This implementation also *avoids the use of any GPU computing*, which makes it suitable for limited hardware platforms. It does not contain any system for rendering/displaying the resulting 3D reconstruction. It has been tested on Ubuntu 14.04 in Linux with ROS hydro/indigo.
 
+## API Usage
+Check the `chisel_ros` package source for an example of how to use the API. The `ChiselServer` class makes use of the `chisel_ros` API.
+
 ###Dependencies
 * [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page)
 * C++11
