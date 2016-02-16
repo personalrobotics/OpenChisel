@@ -36,10 +36,27 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <open_chisel/pointcloud/PointCloud.h>
 #include <pcl/filters/filter.h>
+#include <sensor_msgs/point_cloud_conversion.h>
 
 namespace chisel_ros
 {
-    void PclPointCloudToChisel(const pcl::PointCloud<pcl::PointXYZRGB>& cloudIn, chisel::PointCloud* cloudOut)
+    void PclPointCloudToChisel(const pcl::PointCloud<pcl::PointXYZ>& cloudIn, chisel::PointCloud* cloudOut)
+    {
+        assert(!!cloudOut);
+        cloudOut->GetMutablePoints().resize(cloudIn.points.size());
+
+        size_t i = 0;
+        for (const pcl::PointXYZ& pt : cloudIn.points)
+        {
+            chisel::Vec3& xyz =  cloudOut->GetMutablePoints().at(i);
+            xyz(0) = pt.x;
+            xyz(1) = pt.y;
+            xyz(2) = pt.z;
+            i++;
+        }
+    }
+
+    void PclColorPointCloudToChisel(const pcl::PointCloud<pcl::PointXYZRGB>& cloudIn, chisel::PointCloud* cloudOut)
     {
         assert(!!cloudOut);
         cloudOut->GetMutablePoints().resize(cloudIn.points.size());
@@ -65,12 +82,27 @@ namespace chisel_ros
     void ROSPointCloudToChisel(sensor_msgs::PointCloud2ConstPtr cloudIn, chisel::PointCloud* cloudOut)
     {
         assert(!!cloudOut);
-        pcl::PointCloud<pcl::PointXYZRGB> pclCloud;
-        pcl::fromROSMsg(*cloudIn, pclCloud);
-        //remove NAN points from the cloud
-        std::vector<int> indices;
-        pcl::removeNaNFromPointCloud(pclCloud, pclCloud, indices);
-        PclPointCloudToChisel(pclCloud, cloudOut);
+
+        if (sensor_msgs::getPointCloud2FieldIndex(*cloudIn, "rgb") == -1 )
+        {
+            //Got uncolored pointcloud
+            pcl::PointCloud<pcl::PointXYZ> pclCloud;
+            pcl::fromROSMsg(*cloudIn, pclCloud);
+            //remove NAN points from the cloud
+            std::vector<int> indices;
+            pcl::removeNaNFromPointCloud(pclCloud, pclCloud, indices);
+            PclPointCloudToChisel(pclCloud, cloudOut);
+        }
+        else
+        {
+            //Got colored pointcloud
+            pcl::PointCloud<pcl::PointXYZRGB> pclCloud;
+            pcl::fromROSMsg(*cloudIn, pclCloud);
+            //remove NAN points from the cloud
+            std::vector<int> indices;
+            pcl::removeNaNFromPointCloud(pclCloud, pclCloud, indices);
+            PclColorPointCloudToChisel(pclCloud, cloudOut);
+        }
     }
 
 
@@ -149,7 +181,7 @@ namespace chisel_ros
         {
             numChannels = 1;
         }
-        else if(image->encoding == "bgr8")
+        else if(image->encoding == "bgr8" || image->encoding == "rgb8")
         {
             numChannels = 3;
         }
@@ -159,7 +191,7 @@ namespace chisel_ros
         }
         else
         {
-            ROS_ERROR("Unsupported color image format %s. Supported formats are mono8, bgr8, and bgra8\n", image->encoding.c_str());
+            ROS_ERROR("Unsupported color image format %s. Supported formats are mono8, rgb8, bgr8, and bgra8\n", image->encoding.c_str());
         }
 
         chisel::ColorImage<DataType>* toReturn = new chisel::ColorImage<DataType>(image->width, image->height, numChannels);
