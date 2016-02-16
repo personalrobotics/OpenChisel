@@ -3,9 +3,9 @@
 
 #include "Geometry.h"
 
-float signum(float x);
+float signum(int x);
 float mod(float value, float modulus);
-float intbound(float s, float ds);
+float intbound(float s, int ds);
 void Raycast(const chisel::Vec3& start, const chisel::Vec3& end, const chisel::Point3& min, const chisel::Point3& max, chisel::Point3List* output);
 
 #endif // RAYCAST_H_ 

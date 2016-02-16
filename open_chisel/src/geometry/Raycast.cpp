@@ -1,7 +1,7 @@
 #include <open_chisel/geometry/Raycast.h>
 using namespace chisel;
 
-float signum(float x)
+float signum(int x)
 {
     return x == 0 ? 0 : x < 0 ? -1 : 1;
 }
@@ -11,16 +11,21 @@ float mod(float value, float modulus)
   return fmod(fmod(value, modulus) + modulus,  modulus);
 }
 
-float intbound(float s, float ds)
+float intbound(float s, int ds)
 {
   // Find the smallest positive t such that s+t*ds is an integer.
-  if (ds < 0)
+  if (ds == 0)
+  {
+    // when ds is zero, we cant find a solution,
+    return std::numeric_limits<double>::max();
+  }
+  else if (ds < 0)
   {
     return intbound(-s, -ds);
   }
   else
   {
-    s = mod(s, 1);
+    s = mod(s, 1.0f);
     // problem is now s+t*ds = 1
     return (1-s)/ds;
   }
@@ -54,12 +59,11 @@ void Raycast(const Vec3& start, const Vec3& end, const Point3& min, const Point3
     int endX = (int)std::floor(end.x());
     int endY = (int)std::floor(end.y());
     int endZ = (int)std::floor(end.z());
-    Vec3 direction = (end - start);
 
     // Break out direction vector.
-    float dx = endX - x;
-    float dy = endY - y;
-    float dz = endZ - z;
+    int dx = endX - x;
+    int dy = endY - y;
+    int dz = endZ - z;
 
     // Direction to increment x,y,z when stepping.
     int stepX = signum(dx);
