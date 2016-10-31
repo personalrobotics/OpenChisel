@@ -80,7 +80,7 @@ namespace chisel
 
             inline VoxelID GetVoxelID(int x, int y, int z) const
             {
-                return (z * numVoxels(2) + y) * numVoxels(0) + x;
+                return (z * numVoxels(1) + y) * numVoxels(0) + x;
             }
 
             inline const DistVoxel& GetDistVoxel(int x, int y, int z) const
