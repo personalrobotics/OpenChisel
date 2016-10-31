@@ -4,7 +4,7 @@ OpenChisel
 An open-source version of the Chisel chunked TSDF library. It contains two packages:
 
 ##open_chisel
-`open_chisel` is an implementation of a generic truncated signed distance field ([TSDF](https://graphics.stanford.edu/papers/volrange/volrange.pdf)) 3D mapping library; based on the Chisel mapping framework developed originally for Google's [Project Tango](https://www.google.com/atap/project-tango/). It is a complete re-write of the original mapping system (which is proprietary). `open_chisel` is [chunked and spatially hashed](http://www.graphics.stanford.edu/~niessner/niessner2013hashing.html), making it more memory-efficient than fixed-grid mapping approaches, and more performant than octree-based approaches. A technical description of how it works can be found in our [RSS 2015 paper](http://www.roboticsproceedings.org/rss11/p40.pdf).
+`open_chisel` is an implementation of a generic truncated signed distance field ([TSDF](https://graphics.stanford.edu/papers/volrange/volrange.pdf)) 3D mapping library; based on the Chisel mapping framework developed originally for Google's [Project Tango](https://www.google.com/atap/project-tango/). It is a complete re-write of the original mapping system (which is proprietary). `open_chisel` is chunked and spatially hashed [inspired by this work from Neissner et. al](http://www.graphics.stanford.edu/~niessner/niessner2013hashing.html), making it more memory-efficient than fixed-grid mapping approaches, and more performant than octree-based approaches. A technical description of how it works can be found in our [RSS 2015 paper](http://www.roboticsproceedings.org/rss11/p40.pdf).
 
 This reference implementation does not include any pose estimation. Therefore **the pose of the sensor must be provided from an external source**. This implementation also *avoids the use of any GPU computing*, which makes it suitable for limited hardware platforms. It does not contain any system for rendering/displaying the resulting 3D reconstruction. It has been tested on Ubuntu 14.04 in Linux with ROS hydro/indigo.
 
@@ -42,7 +42,7 @@ Note: you will also need to get the messages package, [chisel_msgs](https://gith
 * ROS OpenCV [cv_bridge](http://wiki.ros.org/cv_bridge)
 
 ### A note on PCL
-Unfortunately, PCL 1.7x (the standard PCL included in current versions of ROS) doesn't work with C++11. This project makes heavy use of C++11, so in order to use Chisel, you will have to download and install PCL 1.8 from source, and compile it with C++11 enabled.
+Unfortunately, PCL 1.7x (the standard PCL included in current versions of ROS) doesn't work with C++11. This project makes  use of C++11, so in order to use Chisel, you will have to download and install PCL 1.8 from source, and compile it with C++11 enabled.
 
 1. Download PCL 1.8 from here: https://github.com/PointCloudLibrary/pcl
 2. Modify line 91 of `CMakeLists.txt` in PCL to say `SET(CMAKE_CXX_FLAGS "-Wall -std=c++11 ...`
