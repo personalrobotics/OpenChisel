@@ -103,6 +103,11 @@ namespace chisel
                 return GetColorVoxelMutable(GetVoxelID(x, y, z));
             }
 
+            inline bool IsCoordValid(VoxelID idx) const
+            {
+                return idx >= 0 && idx < voxels.size();
+            }
+
             inline bool IsCoordValid(int x, int y, int z) const
             {
                 return (x >= 0 && x < numVoxels(0) && y >= 0 && y < numVoxels(1) && z >= 0 && z < numVoxels(2));
@@ -128,6 +133,8 @@ namespace chisel
             Vec3 GetColorAt(const Vec3& pos);
 
             VoxelID GetVoxelID(const Vec3& worldPos) const;
+            VoxelID GetLocalVoxelIDFromGlobal(const Point3& worldPoint) const;
+            Point3 GetLocalCoordsFromGlobal(const Point3& worldPoint) const;
 
         protected:
             ChunkID ID;

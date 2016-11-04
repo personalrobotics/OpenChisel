@@ -11,7 +11,7 @@
         <param name="carving_dist_m" value="0.05"/>
         <param name="voxel_resolution_m" value="0.015"/>
         <param name="far_plane_dist" value="1.1"/>
-        <param name="base_transform" value="/herb_base"/>
+        <param name="base_transform" value="/map"/>
         <param name="depth_image_transform" value="/head/kinect2_ir_optical_frame"/>
         <param name="color_image_transform" value="/head/kinect2_rgb_optical_frame"/>
         <param name="fusion_mode" value="DepthImage"/>

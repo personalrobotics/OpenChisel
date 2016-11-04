@@ -24,7 +24,8 @@
 namespace chisel
 {
 
-    Chunk::Chunk()
+    Chunk::Chunk() :
+            voxelResolutionMeters(0)
     {
         // TODO Auto-generated constructor stub
 
@@ -80,9 +81,19 @@ namespace chisel
                        static_cast<int>(std::floor(worldCoords(2) * roundingFactorZ)));
     }
 
-    VoxelID Chunk::GetVoxelID(const Vec3& worldPos) const
+    VoxelID Chunk::GetVoxelID(const Vec3& relativePos) const
     {
-        return GetVoxelID(GetVoxelCoords(worldPos));
+        return GetVoxelID(GetVoxelCoords(relativePos));
+    }
+
+    VoxelID Chunk::GetLocalVoxelIDFromGlobal(const Point3& worldPoint) const
+    {
+        return GetVoxelID(GetLocalCoordsFromGlobal(worldPoint));
+    }
+
+    Point3 Chunk::GetLocalCoordsFromGlobal(const Point3& worldPoint) const
+    {
+        return (worldPoint - Point3(ID.x() * numVoxels.x(), ID.y() * numVoxels.y(), ID.z() * numVoxels.z()));
     }
 
 

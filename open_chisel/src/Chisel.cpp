@@ -23,6 +23,9 @@
 
 #include <open_chisel/io/PLY.h>
 
+#include <open_chisel/geometry/Raycast.h>
+
+#include <iostream>
 namespace chisel
 {
 
@@ -56,10 +59,13 @@ namespace chisel
 
     void Chisel::GarbageCollect(const ChunkIDList& chunks)
     {
+        std::cout << chunkManager.GetChunks().size() << " chunks " << chunkManager.GetAllMeshes().size() << "meshes before collect.";
        for (const ChunkID& chunkID : chunks)
        {
            chunkManager.RemoveChunk(chunkID);
+           meshesToUpdate.erase(chunkID);
        }
+        std::cout << chunkManager.GetChunks().size() << " chunks " << chunkManager.GetAllMeshes().size() << "meshes after collect.";
     }
 
     bool Chisel::SaveAllMeshesToPLY(const std::string& filename)
@@ -100,52 +106,111 @@ namespace chisel
         return success;
     }
 
-    void Chisel::IntegratePointCloud(const ProjectionIntegrator& integrator, const PointCloud& cloud, const Transform& extrinsic, float truncation, float maxDist)
+    void Chisel::IntegratePointCloud(const ProjectionIntegrator& integrator,
+                                     const PointCloud& cloud,
+                                     const Transform& cameraPose,
+                                     float maxDist)
     {
-        ChunkIDList chunksIntersecting;
-        chunkManager.GetChunkIDsIntersecting(cloud, extrinsic, truncation, maxDist, &chunksIntersecting);
-        printf("There are %lu chunks intersecting\n", chunksIntersecting.size());
-        std::mutex mutex;
-        ChunkIDList garbageChunks;
-        //for(const ChunkID& chunkID : chunksIntersecting)
-        parallel_for(chunksIntersecting.begin(), chunksIntersecting.end(), [&](const ChunkID& chunkID)
-        {
-            bool chunkNew = false;
 
-            mutex.lock();
-            if (!chunkManager.HasChunk(chunkID))
-            {
-                chunkNew = true;
-                chunkManager.CreateChunk(chunkID);
-            }
+          const float roundToVoxel = 1.0f / chunkManager.GetResolution();
+          const Vec3 halfVoxel = Vec3(0.5, 0.5, 0.5) * chunkManager.GetResolution();
+          std::unordered_map<ChunkID, bool, ChunkHasher> updated;
+          std::unordered_map<ChunkID, bool, ChunkHasher> newChunks;
+          const Vec3 startCamera = cameraPose.translation();
+          const Transform inversePose = cameraPose.inverse();
+          const Point3 minVal(-std::numeric_limits<int>::max(), -std::numeric_limits<int>::max(), -std::numeric_limits<int>::max());
+          const Point3 maxVal(std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), std::numeric_limits<int>::max());
+          const size_t numPoints = cloud.GetPoints().size();
+          const bool carving = integrator.IsCarvingEnabled();
+          const float carvingDist = integrator.GetCarvingDist();
 
-            ChunkPtr chunk = chunkManager.GetChunk(chunkID);
-            mutex.unlock();
+          for (size_t i = 0; i < numPoints; i++)
+          {
+              Point3List raycastVoxels;
+              const Vec3& point = cloud.GetPoints().at(i);
+              Vec3 worldPoint = cameraPose * point;
+              float depth = point.z();
 
-            bool needsUpdate = integrator.Integrate(cloud, extrinsic, chunk.get());
+              if (depth < 0.01f) continue;
 
-            mutex.lock();
-            if (needsUpdate)
-            {
-                for (int dx = -1; dx <= 1; dx++)
-                {
-                    for (int dy = -1; dy <= 1; dy++)
-                    {
-                        for (int dz = -1; dz <= 1; dz++)
-                        {
-                            meshesToUpdate[chunkID + ChunkID(dx, dy, dz)] = true;
-                        }
-                    }
-                }
-            }
-            else if(chunkNew)
-            {
-                garbageChunks.push_back(chunkID);
-            }
-            mutex.unlock();
-        });
-        GarbageCollect(garbageChunks);
-        chunkManager.PrintMemoryStatistics();
+              Vec3 dir = (worldPoint - startCamera).normalized();
+              float truncation = integrator.GetTruncator()->GetTruncationDistance(depth);
+              Vec3 start = carving ? static_cast<Vec3>(startCamera * roundToVoxel) : static_cast<Vec3>((worldPoint - dir * truncation) * roundToVoxel);
+              Vec3 end = (worldPoint + dir * truncation) * roundToVoxel;
+
+              raycastVoxels.clear();
+              Raycast(start, end, minVal, maxVal, &raycastVoxels);
+              if (raycastVoxels.size() > 500)
+              {
+                  std::cerr << "Error, too many racyast voxels." << std::endl;
+                  throw std::out_of_range("Too many raycast voxels");
+              }
+
+              //std::cout << "chunk: " << chunk->GetID().transpose() << " from "
+              //        << start.transpose() << " to " << end.transpose() << " : " << raycastVoxels.size() << std::endl;
+              for (const Point3& voxelCoords : raycastVoxels)
+              {
+                  Vec3 center = chunkManager.GetCentroid(voxelCoords);
+                  bool wasNew = false;
+                  ChunkPtr chunk = chunkManager.GetOrCreateChunkAt(center, &wasNew);
+                  if (wasNew)
+                  {
+                      newChunks[chunk->GetID()] = true;
+                      updated[chunk->GetID()] = false;
+                  }
+
+                  VoxelID id = chunk->GetLocalVoxelIDFromGlobal(voxelCoords);
+                  if (!chunk->IsCoordValid(id))
+                  {
+                      continue;
+                  }
+
+                  DistVoxel& distVoxel = chunk->GetDistVoxelMutable(id);
+                  float u = depth - (inversePose * (center)).z();
+                  float weight = integrator.GetWeighter()->GetWeight(u, truncation);
+
+                  if (fabs(u) < truncation)
+                  {
+                      distVoxel.Integrate(u, weight);
+                      updated[chunk->GetID()] = true;
+                  }
+                  else if (!wasNew && carving && u > truncation + carvingDist)
+                  {
+                      if (distVoxel.GetWeight() > 0 && distVoxel.GetSDF() < 0.0f)
+                      {
+                          distVoxel.Carve();
+                          updated[chunk->GetID()] = true;
+                      }
+                  }
+              }
+          }
+
+          for (const std::pair<ChunkID, bool>& updatedChunk : updated)
+          {
+              if (updatedChunk.second)
+              {
+                  for (int dx = -1; dx <= 1; dx++)
+                  {
+                      for (int dy = -1; dy <= 1; dy++)
+                      {
+                          for (int dz = -1; dz <= 1; dz++)
+                          {
+                              meshesToUpdate[updatedChunk.first + ChunkID(dx, dy, dz)] = true;
+                          }
+                      }
+                  }
+              }
+          }
+          ChunkIDList garbageChunks;
+          for (const std::pair<ChunkID, bool>& newChunk : newChunks)
+          {
+              if (!updated[newChunk.first])
+              {
+                  garbageChunks.push_back(newChunk.first);
+              }
+          }
+
+          GarbageCollect(garbageChunks);
     }
 
 

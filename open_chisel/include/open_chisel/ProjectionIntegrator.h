@@ -41,14 +41,21 @@ namespace chisel
     {
         public:
             ProjectionIntegrator();
-            ProjectionIntegrator(const TruncatorPtr& t, const WeighterPtr& w, float carvingDist, bool enableCarving, const Vec3List& centroids);
+            ProjectionIntegrator(const TruncatorPtr& t,
+                                 const WeighterPtr& w,
+                                 float carvingDist,
+                                 bool enableCarving,
+                                 const Vec3List& centroids);
+
             virtual ~ProjectionIntegrator();
 
-            bool Integrate(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk) const;
-            bool IntegratePointCloud(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk) const;
-            bool IntegrateColorPointCloud(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk) const;
+            bool Integrate(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk, const std::vector<size_t>& idx) const;
+            bool IntegratePointCloud(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk,  const std::vector<size_t>& idx) const;
+            bool IntegrateColorPointCloud(const PointCloud& cloud, const Transform& cameraPose, Chunk* chunk,  const std::vector<size_t>& idx) const;
 
-            template<class DataType> bool Integrate(const std::shared_ptr<const DepthImage<DataType> >& depthImage, const PinholeCamera& camera, const Transform& cameraPose, Chunk* chunk) const
+            template<class DataType> bool Integrate(const std::shared_ptr<const DepthImage<DataType> >& depthImage,
+                                                    const PinholeCamera& camera,
+                                                    const Transform& cameraPose, Chunk* chunk) const
             {
                 assert(chunk != nullptr);
 
@@ -176,13 +183,13 @@ namespace chisel
                     return updated;
             }
 
-            inline const TruncatorPtr& GetTruncator() { return truncator; }
+            inline const TruncatorPtr& GetTruncator() const { return truncator; }
             inline void SetTruncator(const TruncatorPtr& value) { truncator = value; }
-            inline const WeighterPtr& GetWeighter() { return weighter; }
+            inline const WeighterPtr& GetWeighter() const { return weighter; }
             inline void SetWeighter(const WeighterPtr& value) { weighter = value; }
 
-            inline float GetCarvingDist() { return carvingDist; }
-            inline bool IsCarvingEnabled() { return enableVoxelCarving; }
+            inline float GetCarvingDist() const { return carvingDist; }
+            inline bool IsCarvingEnabled() const { return enableVoxelCarving; }
             inline void SetCarvingDist(float dist) { carvingDist = dist; }
             inline void SetCarvingEnabled(bool enabled) { enableVoxelCarving = enabled; }
 

@@ -61,8 +61,8 @@ namespace chisel
 
             inline void Carve()
             {
-		Reset();
-                //Integrate(0.0, 1.5);
+                //Reset();
+                Integrate(0.0, 1.5);
             }
 
             inline void Reset()

@@ -36,6 +36,7 @@ int main(int argc, char** argv)
     int weight;
     bool useCarving;
     bool useColor;
+    bool saveFile;
     double carvingDist;
     std::string depthImageTopic;
     std::string depthImageInfoTopic;
@@ -46,6 +47,7 @@ int main(int argc, char** argv)
     std::string baseTransform;
     std::string meshTopic;
     std::string chunkBoxTopic;
+    std::string fileToSave;
     double nearPlaneDist;
     double farPlaneDist;
     chisel_ros::ChiselServer::FusionMode mode;
@@ -62,6 +64,7 @@ int main(int argc, char** argv)
     nh.param("integration_weight", weight, 1);
     nh.param("use_voxel_carving", useCarving, true);
     nh.param("use_color", useColor, true);
+    nh.param("save_file_on_exit", saveFile, true);
     nh.param("carving_dist_m", carvingDist, 0.05);
     nh.param("voxel_resolution_m", voxelResolution, 0.03);
     nh.param("near_plane_dist", nearPlaneDist, 0.05);
@@ -77,6 +80,7 @@ int main(int argc, char** argv)
     nh.param("mesh_topic", meshTopic, std::string("full_mesh"));
     nh.param("chunk_box_topic", chunkBoxTopic, std::string("chunk_boxes"));
     nh.param("fusion_mode", modeString, std::string("DepthImage"));
+    nh.param("file_path", fileToSave, std::string("/home/mklingen/.ros/chisel.ply"));
 
     if(modeString == "DepthImage")
     {
@@ -129,12 +133,13 @@ int main(int argc, char** argv)
     ROS_INFO("Beginning to loop.");
     while (ros::ok())
     {
+        //ROS_INFO("Spinning...");
         ros::Rate loop_rate(100);
         ros::spinOnce();
-
+        //ROS_INFO("Waiting for data...");
         if(!server->IsPaused() && server->HasNewData())
         {
-            ROS_INFO("Got data.");
+            //ROS_INFO("Got data.");
             switch (server->GetMode())
             {
                 case chisel_ros::ChiselServer::FusionMode::DepthImage:
@@ -160,6 +165,12 @@ int main(int argc, char** argv)
                 }
             }
         }
+    }
+
+    if (saveFile)
+    {
+        ROS_INFO("Saving to %s\n", fileToSave.c_str());
+        server->GetChiselMap()->SaveAllMeshesToPLY(fileToSave);
     }
 
 }

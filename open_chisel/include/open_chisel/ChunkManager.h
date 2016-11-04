@@ -30,6 +30,7 @@
 #include <open_chisel/ColorVoxel.h>
 #include <open_chisel/DistVoxel.h>
 #include <open_chisel/pointcloud/PointCloud.h>
+#include <iostream>
 
 #include "Chunk.h"
 
@@ -50,11 +51,14 @@ namespace chisel
             }
     };
 
+
     typedef std::unordered_map<ChunkID, ChunkPtr, ChunkHasher> ChunkMap;
     typedef std::unordered_map<ChunkID, bool, ChunkHasher> ChunkSet;
     typedef std::unordered_map<ChunkID, MeshPtr, ChunkHasher> MeshMap;
+    typedef std::unordered_map<ChunkID, std::vector<size_t>, ChunkHasher> ChunkPointMap;
     class Frustum;
     class AABB;
+    class ProjectionIntegrator;
     class ChunkManager
     {
         public:
@@ -85,9 +89,13 @@ namespace chisel
                 if(HasChunk(chunk))
                 {
                     chunks.erase(chunk);
+
+                    if (HasMesh(chunk))
+                    {
+                        allMeshes.erase(chunk);
+                    }
                     return true;
                 }
-
                 return false;
             }
 
@@ -111,6 +119,23 @@ namespace chisel
                 return ChunkPtr();
             }
 
+            inline ChunkPtr GetOrCreateChunkAt(const Vec3& pos, bool* wasNew)
+            {
+                ChunkID id = GetIDAt(pos);
+
+                if (HasChunk(id))
+                {
+                    *wasNew = false;
+                    return GetChunk(id);
+                }
+                else
+                {
+                    *wasNew = true;
+                    CreateChunk(id);
+                    return GetChunk(id);
+                }
+            }
+
             inline ChunkID GetIDAt(const Vec3& pos) const
             {
                 static const float roundingFactorX = 1.0f / (chunkSize(0) * voxelResolutionMeters);
@@ -122,12 +147,21 @@ namespace chisel
                                static_cast<int>(std::floor(pos(2) * roundingFactorZ)));
             }
 
+            inline Vec3 GetCentroid(const Point3& globalVoxelID)
+            {
+                return globalVoxelID.cast<float>() * voxelResolutionMeters + halfVoxel;
+            }
+
             const DistVoxel* GetDistanceVoxel(const Vec3& pos);
             const ColorVoxel* GetColorVoxel(const Vec3& pos);
 
             void GetChunkIDsIntersecting(const AABB& box, ChunkIDList* chunkList);
             void GetChunkIDsIntersecting(const Frustum& frustum, ChunkIDList* chunkList);
-            void GetChunkIDsIntersecting(const PointCloud& cloud, const Transform& cameraTransform, float truncation, float maxDist, ChunkIDList* chunkList);
+            void GetChunkIDsIntersecting(const PointCloud& cloud,
+                                         const Transform& cameraTransform,
+                                         const ProjectionIntegrator& integrator,
+                                         float maxDist,
+                                         ChunkPointMap* chunkList);
             void CreateChunk(const ChunkID& id);
 
             void GenerateMesh(const ChunkPtr& chunk, Mesh* mesh);
@@ -167,6 +201,7 @@ namespace chisel
             ChunkMap chunks;
             Eigen::Vector3i chunkSize;
             float voxelResolutionMeters;
+            Vec3 halfVoxel;
             Vec3List centroids;
             Eigen::Matrix<int, 3, 8> cubeIndexOffsets;
             MeshMap allMeshes;

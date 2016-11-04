@@ -45,13 +45,27 @@ namespace chisel
             inline ChunkManager& GetMutableChunkManager() { return chunkManager; }
             inline void SetChunkManager(const ChunkManager& manager) { chunkManager = manager; }
 
-            void IntegratePointCloud(const ProjectionIntegrator& integrator, const PointCloud& cloud, const Transform& extrinsic, float truncation, float maxDist);
+            void IntegratePointCloud(const ProjectionIntegrator& integrator,
+                                     const PointCloud& cloud,
+                                     const Transform& extrinsic,
+                                     float maxDist);
 
-            template <class DataType> void IntegrateDepthScan(const ProjectionIntegrator& integrator, const std::shared_ptr<const DepthImage<DataType> >& depthImage, const Transform& extrinsic, const PinholeCamera& camera)
+            template <class DataType> void IntegrateDepthScan(const ProjectionIntegrator& integrator,
+                                                              const std::shared_ptr<const DepthImage<DataType> >& depthImage,
+                                                              const Transform& extrinsic,
+                                                              const PinholeCamera& camera)
             {
                     printf("CHISEL: Integrating a scan\n");
+
+                    DataType minimum, maximum, mean;
+                    depthImage->GetStats(minimum, maximum, mean);
+
                     Frustum frustum;
-                    camera.SetupFrustum(extrinsic, &frustum);
+                    PinholeCamera cameraCopy = camera;
+                    cameraCopy.SetNearPlane(static_cast<float>(minimum));
+                    cameraCopy.SetFarPlane(static_cast<float>(maximum));
+
+                    cameraCopy.SetupFrustum(extrinsic, &frustum);
 
                     ChunkIDList chunksIntersecting;
                     chunkManager.GetChunkIDsIntersecting(frustum, &chunksIntersecting);

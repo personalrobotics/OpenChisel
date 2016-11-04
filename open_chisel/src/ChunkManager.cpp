@@ -26,6 +26,8 @@
 #include <open_chisel/geometry/AABB.h>
 #include <open_chisel/marching_cubes/MarchingCubes.h>
 #include <open_chisel/geometry/Raycast.h>
+#include <open_chisel/ProjectionIntegrator.h>
+#include <open_chisel/truncation/Truncator.h>
 #include <iostream>
 
 namespace chisel
@@ -50,7 +52,7 @@ namespace chisel
 
     void ChunkManager::CacheCentroids()
     {
-        Vec3 halfResolution = Vec3(voxelResolutionMeters, voxelResolutionMeters, voxelResolutionMeters) * 0.5f;
+        halfVoxel = Vec3(voxelResolutionMeters, voxelResolutionMeters, voxelResolutionMeters) * 0.5f;
         centroids.resize(static_cast<size_t>(chunkSize(0) * chunkSize(1) * chunkSize(2)));
         int i = 0;
         for (int z = 0; z < chunkSize(2); z++)
@@ -59,7 +61,7 @@ namespace chisel
             {
                 for(int x = 0; x < chunkSize(0); x++)
                 {
-                    centroids[i] = Vec3(x, y, z) * voxelResolutionMeters + halfResolution;
+                    centroids[i] = Vec3(x, y, z) * voxelResolutionMeters + halfVoxel;
                     i++;
                 }
             }
@@ -188,32 +190,34 @@ namespace chisel
         //printf("%lu chunks intersect frustum\n", chunkList->size());
     }
 
-    void ChunkManager::GetChunkIDsIntersecting(const PointCloud& cloud, const Transform& cameraTransform,  float truncation, float maxDist, ChunkIDList* chunkList)
+    void ChunkManager::GetChunkIDsIntersecting
+    (
+            const PointCloud& cloud,
+            const Transform& cameraTransform,
+            const ProjectionIntegrator& integrator,
+            float maxDist,
+            ChunkPointMap* chunkList
+    )
     {
         assert(!!chunkList);
         chunkList->clear();
         const float roundX = 1.0f / (chunkSize.x() * voxelResolutionMeters);
         const float roundY = 1.0f / (chunkSize.y() * voxelResolutionMeters);
         const float roundZ = 1.0f / (chunkSize.z() * voxelResolutionMeters);
-        ChunkMap map;
+        const TruncatorPtr& truncator = integrator.GetTruncator();
+
         Point3 minVal(-std::numeric_limits<int>::max(), -std::numeric_limits<int>::max(), -std::numeric_limits<int>::max());
         Point3 maxVal(std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), std::numeric_limits<int>::max());
         size_t numPoints = cloud.GetPoints().size();
-        size_t i = 0;
-        for (const Vec3& point : cloud.GetPoints())
+        Vec3 start = cameraTransform.translation();
+        for (size_t i = 0; i < numPoints; i++)
         {
+            const Vec3& point = cloud.GetPoints().at(i);
             Vec3 end = cameraTransform * point;
-            Vec3 start = cameraTransform.translation();
-            float len = (end - start).norm();
-
-            if(len > maxDist)
-            {
-                continue;
-            }
-
+            float truncation = truncator->GetTruncationDistance(point.z());
             Vec3 dir = (end - start).normalized();
-            Vec3 truncStart = end - dir * truncation;
             Vec3 truncEnd = end + dir * truncation;
+            Vec3 truncStart = end - dir * truncation;
             Vec3 startInt = Vec3(truncStart.x() * roundX , truncStart.y() * roundY, truncStart.z() * roundZ);
             Vec3 endInt = Vec3(truncEnd.x() * roundX, truncEnd.y() * roundY, truncEnd.z() * roundZ);
 
@@ -222,14 +226,11 @@ namespace chisel
 
             for (const Point3& id : intersectingChunks)
             {
-                if(map.find(id) == map.end())
-                    map[id] = ChunkPtr();
-            }
-        }
+                if(chunkList->find(id) == chunkList->end())
+                    (*chunkList)[id] = std::vector<size_t>();
 
-        for (const std::pair<ChunkID, ChunkPtr>& it : map)
-        {
-            chunkList->push_back(it.first);
+                (*chunkList)[id].push_back(i);
+            }
         }
 
     }

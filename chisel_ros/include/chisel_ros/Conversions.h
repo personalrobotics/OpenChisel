@@ -39,21 +39,17 @@
 
 namespace chisel_ros
 {
-    void PclPointCloudToChisel(const pcl::PointCloud<pcl::PointXYZRGB>& cloudIn, chisel::PointCloud* cloudOut)
+
+
+    void SetColors(const pcl::PointCloud<pcl::PointXYZRGB>& cloudIn, chisel::PointCloud* cloudOut)
     {
         assert(!!cloudOut);
-        cloudOut->GetMutablePoints().resize(cloudIn.points.size());
         cloudOut->GetMutableColors().resize(cloudIn.points.size());
 
         size_t i = 0;
         float byteToFloat = 1.0f / 255.0f;
         for (const pcl::PointXYZRGB& pt : cloudIn.points)
         {
-            chisel::Vec3& xyz =  cloudOut->GetMutablePoints().at(i);
-            xyz(0) = pt.x;
-            xyz(1) = pt.y;
-            xyz(2) = pt.z;
-
             chisel::Vec3& rgb = cloudOut->GetMutableColors().at(i);
             rgb(0) = pt.r * byteToFloat;
             rgb(1) = pt.g * byteToFloat;
@@ -62,21 +58,49 @@ namespace chisel_ros
         }
     }
 
-    void ROSPointCloudToChisel(sensor_msgs::PointCloud2ConstPtr cloudIn, chisel::PointCloud* cloudOut)
+    void SetColors(const pcl::PointCloud<pcl::PointXYZ>& cloudIn, chisel::PointCloud* cloudOut)
+    {
+        // Empty because of template shenanigans
+    }
+
+
+    template <class PointType> void PclPointCloudToChisel(const pcl::PointCloud<PointType>& cloudIn, chisel::PointCloud* cloudOut, bool useColor=true)
     {
         assert(!!cloudOut);
-        pcl::PointCloud<pcl::PointXYZRGB> pclCloud;
+        cloudOut->GetMutablePoints().resize(cloudIn.points.size());
+        size_t i = 0;
+        float byteToFloat = 1.0f / 255.0f;
+        for (const PointType& pt : cloudIn.points)
+        {
+            chisel::Vec3& xyz =  cloudOut->GetMutablePoints().at(i);
+            xyz(0) = pt.x;
+            xyz(1) = pt.y;
+            xyz(2) = pt.z;
+            i++;
+        }
+
+        if (useColor)
+        {
+            SetColors(cloudIn, cloudOut);
+        }
+    }
+
+    template <class PointType> void ROSPointCloudToChisel(sensor_msgs::PointCloud2ConstPtr cloudIn, chisel::PointCloud* cloudOut, bool useColor=true)
+    {
+        assert(!!cloudOut);
+        pcl::PointCloud<PointType> pclCloud;
         pcl::fromROSMsg(*cloudIn, pclCloud);
+
         //remove NAN points from the cloud
         std::vector<int> indices;
         pcl::removeNaNFromPointCloud(pclCloud, pclCloud, indices);
-        PclPointCloudToChisel(pclCloud, cloudOut);
+        PclPointCloudToChisel(pclCloud, cloudOut, useColor);
     }
 
 
     template <class DataType> void ROSImgToDepthImg(sensor_msgs::ImageConstPtr image, chisel::DepthImage<DataType>* depthImage)
     {
-            ROS_INFO("Got depth image of format %s\n", image->encoding.c_str());
+            ROS_INFO("Got depth image of format %s", image->encoding.c_str());
             bool mmImage = false;
             
             if (image->encoding == "16UC1")
@@ -170,13 +194,13 @@ namespace chisel_ros
 
     inline chisel::Transform RosTfToChiselTf(const tf::StampedTransform& tf)
     {
-        chisel::Transform transform;
+        chisel::Transform transform(chisel::Transform::Identity());
         transform.translation()(0) = tf.getOrigin().x();
         transform.translation()(1) = tf.getOrigin().y();
         transform.translation()(2) = tf.getOrigin().z();
 
 
-        chisel::Quaternion quat;
+        chisel::Quaternion quat(chisel::Quaternion::Identity());
         quat.x() = tf.getRotation().x();
         quat.y() = tf.getRotation().y();
         quat.z() = tf.getRotation().z();

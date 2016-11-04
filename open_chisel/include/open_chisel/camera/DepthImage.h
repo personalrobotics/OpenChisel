@@ -88,6 +88,27 @@ namespace chisel
                 return row >= 0 && row < width && col >= 0 && col < height;
             }
 
+            void GetStats(DataType& minimum, DataType& maximum, DataType& mean, DataType invalidValid=0) const
+            {
+                int numPixels = width * height;
+                minimum = std::numeric_limits<DataType>::max();
+                maximum = -std::numeric_limits<DataType>::max();
+                mean = static_cast<DataType>(0);
+
+                for (int i = 0; i < numPixels; i++)
+                {
+                    const DataType& pixel = data[i];
+
+                    if (pixel == invalidValid) continue;
+                    if (std::isnan(pixel)) continue;
+
+                    minimum = std::min(pixel, minimum);
+                    maximum = std::max(pixel, maximum);
+                    mean += pixel;
+                }
+                mean /= numPixels;
+            }
+
             inline const DataType* GetData() const { return data; }
             inline DataType* GetMutableData() { return data; }
             inline void SetData(DataType* d) { data = d; }
