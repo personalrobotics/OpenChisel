@@ -131,15 +131,16 @@ int main(int argc, char** argv)
     server->SetupMeshPublisher(meshTopic);
     server->SetupChunkBoxPublisher(chunkBoxTopic);
     ROS_INFO("Beginning to loop.");
+
+    ros::Rate loop_rate(100);
+
     while (ros::ok())
     {
-        //ROS_INFO("Spinning...");
-        ros::Rate loop_rate(100);
+        loop_rate.sleep();
         ros::spinOnce();
-        //ROS_INFO("Waiting for data...");
+
         if(!server->IsPaused() && server->HasNewData())
         {
-            //ROS_INFO("Got data.");
             switch (server->GetMode())
             {
                 case chisel_ros::ChiselServer::FusionMode::DepthImage:

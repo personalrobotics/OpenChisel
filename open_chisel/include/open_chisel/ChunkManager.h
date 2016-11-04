@@ -180,7 +180,7 @@ namespace chisel
 
             inline bool GetUseColor() { return useColor; }
 
-            void RecomptueMesh(const ChunkID& chunkID, std::mutex& mutex);
+            void RecomputeMesh(const ChunkID& chunkID, std::mutex& mutex);
             void RecomputeMeshes(const ChunkSet& chunks);
             void ComputeNormalsFromGradients(Mesh* mesh);
 

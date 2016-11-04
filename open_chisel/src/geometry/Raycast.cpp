@@ -113,9 +113,6 @@ void Raycast(const Vec3& start, const Vec3& end, const Point3& min, const Point3
     float tDeltaY = ((float)stepY) / dy;
     float tDeltaZ = ((float)stepZ) / dz;
 
-    //std::cout << x << " " << y << " " << z << " " << endX << " " << endY << " " << endZ << " " << direction.transpose();
-    //std::cout << " " << stepX << " " << stepY << " " << stepZ << std::endl;
-
     // Avoids an infinite loop.
     if (stepX == 0 && stepY == 0 && stepZ == 0)
         return;

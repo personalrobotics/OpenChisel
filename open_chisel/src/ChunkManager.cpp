@@ -92,7 +92,7 @@ namespace chisel
     }
 
 
-    void ChunkManager::RecomptueMesh(const ChunkID& chunkID, std::mutex& mutex)
+    void ChunkManager::RecomputeMesh(const ChunkID& chunkID, std::mutex& mutex)
     {
         mutex.lock();
         if (!HasChunk(chunkID))
@@ -139,10 +139,11 @@ namespace chisel
         }
 
         std::mutex mutex;
-        for (const std::pair<ChunkID, ChunkPtr>& chunkID : chunks)
+        for (const std::pair<ChunkID, bool>& chunk : chunkMeshes)
         //parallel_for(chunks.begin(), chunks.end(), [this, &mutex](const ChunkID& chunkID)
         {
-            this->RecomptueMesh(ChunkID(chunkID.first), mutex);
+            if (chunk.second)
+              this->RecomputeMesh(ChunkID(chunk.first), mutex);
         }
 
     }
@@ -481,7 +482,7 @@ namespace chisel
         const ColorVoxel* v_010 = GetColorVoxel(Vec3(x_0, y_1, z_0));
         const ColorVoxel* v_101 = GetColorVoxel(Vec3(x_1, y_0, z_1));
 
-        if(!v_000 || !v_001 || !v_011 || !v_111 || !v_110 || !v_100 || v_010 || v_101)
+        if(!v_000 || !v_001 || !v_011 || !v_111 || !v_110 || !v_100 || !v_010 || !v_101)
         {
             const ChunkID& chunkID = GetIDAt(colorPos);
 
