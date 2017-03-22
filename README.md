@@ -45,7 +45,7 @@ Note: you will also need to get the messages package, [chisel_msgs](https://gith
 Unfortunately, PCL 1.7x (the standard PCL included in current versions of ROS) doesn't work with C++11. This project makes  use of C++11, so in order to use Chisel, you will have to download and install PCL 1.8 from source, and compile it with C++11 enabled.
 
 1. Download PCL 1.8 from here: https://github.com/PointCloudLibrary/pcl
-2. Modify line 91 of `CMakeLists.txt` in PCL to say `SET(CMAKE_CXX_FLAGS "-Wall -std=c++11 ...`
+2. Modify line 112 of `CMakeLists.txt` in PCL to say `SET(CMAKE_CXX_FLAGS "-Wall -std=c++11 ...`
 3. Build and install PCL 1.8
 4. Download `pcl_ros` from here: https://github.com/ros-perception/perception_pcl
 5. Change the dependency from `PCL` to `PCL 1.8` in `find_package` of the `CMakeLists.txt` 
