@@ -3,7 +3,7 @@ OpenChisel
 
 An open-source version of the Chisel chunked TSDF library. It contains two packages:
 
-##open_chisel
+## open_chisel
 `open_chisel` is an implementation of a generic truncated signed distance field ([TSDF](https://graphics.stanford.edu/papers/volrange/volrange.pdf)) 3D mapping library; based on the Chisel mapping framework developed originally for Google's [Project Tango](https://www.google.com/atap/project-tango/). It is a complete re-write of the original mapping system (which is proprietary). `open_chisel` is chunked and spatially hashed [inspired by this work from Neissner et. al](http://www.graphics.stanford.edu/~niessner/niessner2013hashing.html), making it more memory-efficient than fixed-grid mapping approaches, and more performant than octree-based approaches. A technical description of how it works can be found in our [RSS 2015 paper](http://www.roboticsproceedings.org/rss11/p40.pdf).
 
 This reference implementation does not include any pose estimation. Therefore **the pose of the sensor must be provided from an external source**. This implementation also *avoids the use of any GPU computing*, which makes it suitable for limited hardware platforms. It does not contain any system for rendering/displaying the resulting 3D reconstruction. It has been tested on Ubuntu 14.04 in Linux with ROS hydro/indigo.
@@ -11,7 +11,7 @@ This reference implementation does not include any pose estimation. Therefore **
 ### API Usage
 Check the `chisel_ros` package source for an example of how to use the API. The `ChiselServer` class makes use of the `chisel_ros` API.
 
-###Dependencies
+### Dependencies
 * [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page)
 * C++11
 * [catkin](http://wiki.ros.org/catkin) build system
@@ -19,12 +19,12 @@ Check the `chisel_ros` package source for an example of how to use the API. The 
 Compilation note:
 For speed, it is essential to compile `open_chisel` with optimization. You will need to add the flag `-DCMAKE_BUILD_TYPE=Release` to your `catkin_make` command when building.
 
-##chisel_ros
+## chisel_ros
 `chisel_ros` is a wrapper around `open_chisel` that interfaces with ROS-based depth and color sensors. The main class `chisel_ros` provides is `ChiselServer`, which subscribes to depth images, color images, TF frames, and camera intrinsics.
 
 Note: you will also need to get the messages package, [chisel_msgs](https://github.com/personalrobotics/chisel_msgs) to build this.
 
-###Supported ROS image types:
+### Supported ROS image types:
 **Depth Images**
 * 32 bit floating point mono in meters (`32FC1`)
 * 16 bit unsigned characters in millimeters (`16UC1`)
@@ -34,7 +34,7 @@ Note: you will also need to get the messages package, [chisel_msgs](https://gith
 * `BGRA8`
 * `Mono8`
 
-###Dependencies
+### Dependencies
 * Eigen
 * C++11
 * catkin (`ros-hydro` or `ros-indigo` or higher)
@@ -54,7 +54,7 @@ Unfortunately, PCL 1.7x (the standard PCL included in current versions of ROS) d
 
 If PCL does not gain `c++11` support by default soon, we may just get rid of `c++11` in `OpenChisel` and use `boost` instead.
 
-###Launching chisel_ros Server
+### Launching chisel_ros Server
 
 Once built, the `chisel_ros` server can be launched by using a launch file. There's an example launch file located at `chisel_ros/launch/launch_kinect_local.launch`. Modify the parameters as necessary to connect to your camera and TF frame.
 ```XML
