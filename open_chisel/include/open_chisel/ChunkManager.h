@@ -43,7 +43,7 @@ namespace chisel
             // Three large primes are used for spatial hashing.
             static constexpr size_t p1 = 73856093;
             static constexpr size_t p2 = 19349663;
-            static constexpr size_t p3 = 8349279;
+            static constexpr size_t p3 = 83492791;
 
             std::size_t operator()(const ChunkID& key) const
             {
