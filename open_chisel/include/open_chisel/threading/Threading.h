@@ -26,6 +26,7 @@
 #include <cstddef>
 #include <thread>
 #include <algorithm>
+#include <vector>
 
 namespace chisel
 {
